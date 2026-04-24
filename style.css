@@ -349,3 +349,136 @@ header {
 
 .lightbox-wrap { text-align: center; padding-top: 50px; }
 .lightbox-wrap img { max-width: 90%; max-height: 70vh; border: 5px solid white; border-radius: 20px; }
+@import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap');
+
+:root {
+    --main-pink: #ffb6c1;
+    --dark-pink: #ff8fa3;
+    --main-blue: #6eb5ff;
+    --bg-color: #f0f7ff;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Prompt', sans-serif; }
+
+body {
+    background-color: var(--bg-color);
+    background-image: radial-gradient(#d1e4ff 2px, transparent 2px);
+    background-size: 25px 25px;
+    overflow-x: hidden;
+}
+
+/* Header - ปรับให้ยืดหยุ่น */
+header {
+    text-align: center; 
+    padding: 30px 15px;
+}
+
+.header-container {
+    display: inline-block; 
+    background: white; 
+    padding: 15px 25px;
+    border: 3px solid var(--dark-pink); 
+    border-radius: 25px;
+    box-shadow: 6px 6px 0px var(--dark-pink);
+    max-width: 100%;
+}
+
+.header-container h1 { 
+    color: var(--dark-pink); 
+    font-size: 1.8rem; /* ขนาดเล็กลงเพื่อมือถือ */
+}
+
+.container { 
+    max-width: 1200px; 
+    margin: 0 auto; 
+    padding: 15px; 
+}
+
+/* Grid ของอัลบั้ม - ปรับให้รองรับหน้าจอทุกขนาด */
+.folder-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); /* มือถือโชว์ 2 คอลัมน์ได้ */
+    gap: 15px; 
+    padding-bottom: 40px;
+}
+
+.folder-card {
+    background: white; 
+    border: 3px solid var(--main-blue);
+    border-radius: 20px; 
+    padding: 25px 10px; 
+    text-align: center;
+    cursor: pointer; 
+    transition: 0.3s;
+    box-shadow: 5px 5px 0px var(--main-blue);
+}
+
+.folder-card .icon { 
+    font-size: 3rem; 
+    display: block; 
+    margin-bottom: 10px; 
+}
+
+.folder-card h3 { font-size: 1rem; }
+.folder-card p { font-size: 0.8rem; color: #888; }
+
+/* หน้า Gallery - ส่วนหัว */
+.gallery-nav {
+    display: flex; 
+    flex-direction: column; /* มือถือวางซ้อนกัน */
+    gap: 15px;
+    background: white; 
+    padding: 15px; 
+    border-radius: 20px;
+    border: 2px solid #ddd; 
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+/* รูปแบบรูปภาพใน Gallery */
+.photo-grid {
+    display: grid; 
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); /* รูปเล็กลงในมือถือ */
+    gap: 15px;
+}
+
+.card-container { 
+    height: 220px; /* ลดความสูงลงในหน้าจอปกติ */
+}
+
+/* Modal - ปรับให้เต็มจอในมือถือ */
+.modal-content {
+    background: white; 
+    width: 95%; 
+    max-width: 500px; 
+    margin: 20px auto;
+    padding: 20px; 
+    border-radius: 25px; 
+    border: 4px solid var(--main-pink);
+}
+
+/* --- Responsive ปรับแต่งพิเศษสำหรับหน้าจอใหญ่ --- */
+@media (min-width: 768px) {
+    .header-container h1 { font-size: 2.5rem; }
+    .folder-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; }
+    .folder-card { padding: 40px 20px; box-shadow: 8px 8px 0px var(--main-blue); }
+    .gallery-nav { flex-direction: row; justify-content: space-between; }
+    .card-container { height: 350px; }
+    .photo-grid { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 25px; }
+}
+
+/* ปุ่มและ UI อื่นๆ */
+.btn-back, .btn-add, .btn-save-final {
+    padding: 10px 15px; border-radius: 12px; border: none; cursor: pointer; font-weight: 600; font-size: 0.9rem;
+}
+.btn-add { background: var(--dark-pink); color: white; }
+.btn-back { background: #eee; color: #555; }
+.btn-save-final { background: var(--main-blue); color: white; width: 100%; margin-top: 15px; }
+
+.btn-delete {
+    margin-top: 10px; background: white; color: red; border: 2px solid red;
+    padding: 5px 10px; border-radius: 8px; cursor: pointer; font-size: 0.8rem;
+}
+
+.cloud-bg, .cloud-bg-2 { display: none; } /* ซ่อนเมฆในมือถือเพื่อไม่ให้เกะกะ */
+@media (min-width: 768px) { .cloud-bg, .cloud-bg-2 { display: block; } }
