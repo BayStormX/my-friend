@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Memories Vault 🐱✨</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="cloud-bg">☁️</div>
+    <div class="cloud-bg-2">☁️</div>
+
+    <header>
+        <div class="header-container">
+            <h1>Our Memories</h1>
+            <p>สมุดบันทึกความทรงจำ 6 อัลบั้มสุดเลิฟ 🐻</p>
+        </div>
+    </header>
+
+    <main class="container">
+        
+        <section id="album-page" class="view-section">
+            <h2 class="title-text">เลือกอัลบั้มที่ต้องการ</h2>
+            <div class="folder-grid">
+                <div class="folder-card" onclick="openAlbum('trip', 'ทริปเที่ยวสุดชิล ⛰️')">
+                    <span class="icon">✈️</span>
+                    <h3>Travel</h3>
+                    <p>รวบรวมทริปสนุกๆ</p>
+                </div>
+                <div class="folder-card" onclick="openAlbum('party', 'ปาร์ตี้สนุกๆ 🥳')">
+                    <span class="icon">🎉</span>
+                    <h3>Party</h3>
+                    <p>ความทรงจำกับเพื่อน</p>
+                </div>
+                <div class="folder-card" onclick="openAlbum('cafe', 'ตะลุยคาเฟ่ 🍰')">
+                    <span class="icon">☕</span>
+                    <h3>Cafe</h3>
+                    <p>ร้านโปรดของเรา</p>
+                </div>
+                <div class="folder-card" onclick="openAlbum('family', 'ครอบครัวอบอุ่น 🏡')">
+                    <span class="icon">👨‍👩‍👧‍👦</span>
+                    <h3>Family</h3>
+                    <p>เวลาดีๆ กับครอบครัว</p>
+                </div>
+                <div class="folder-card" onclick="openAlbum('pet', 'น้องสัตว์สุดแสบ 🐶')">
+                    <span class="icon">🐾</span>
+                    <h3>My Pets</h3>
+                    <p>เจ้าตัวยุ่งประจำบ้าน</p>
+                </div>
+                <div class="folder-card" onclick="openAlbum('hobby', 'กิจกรรมสุดโปรด 🎨')">
+                    <span class="icon">🎮</span>
+                    <h3>Hobbies</h3>
+                    <p>งานอดิเรกที่รัก</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="gallery-page" class="view-section" style="display: none;">
+            <div class="gallery-nav">
+                <button class="btn-back" onclick="goBack()">🔙 ย้อนกลับ</button>
+                <h2 id="album-title-display">ชื่ออัลบั้ม</h2>
+                <button class="btn-add" onclick="openModal()">➕ เพิ่มรูปภาพ</button>
+            </div>
+            
+            <div id="gallery-container" class="photo-grid"></div>
+        </section>
+
+    </main>
+
+    <div id="upload-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <h2>📸 เพิ่มความทรงจำใหม่</h2>
+            <div class="form-item">
+                <label>1. เลือกรูปภาพของคุณ:</label>
+                <input type="file" id="img-input" accept="image/*">
+            </div>
+            <div class="form-item">
+                <label>2. ชื่อภาพ / หัวข้อ:</label>
+                <input type="text" id="title-input" placeholder="ใส่ชื่อรูปสวยๆ...">
+            </div>
+            <div class="form-item">
+                <label>3. รายละเอียดสั้นๆ:</label>
+                <textarea id="detail-input" placeholder="พิมพ์ข้อความที่อยากบันทึก..."></textarea>
+            </div>
+            <button class="btn-save-final" onclick="saveNewPhoto()">บันทึกลงอัลบั้ม ✨</button>
+        </div>
+    </div>
+
+    <div id="lightbox" class="modal-overlay" onclick="closeLightbox()">
+        <div class="lightbox-wrap">
+            <img id="lightbox-img" src="">
+            <p id="lightbox-caption"></p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

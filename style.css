@@ -1,0 +1,351 @@
+:root {
+    --primary: #ff8c94;
+    --secondary: #ffaaa5;
+    --bg: #f8f9fa;
+    --glass: rgba(255, 255, 255, 0.8);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Prompt', sans-serif; }
+
+body { 
+    background: var(--bg); 
+    overflow-x: hidden;
+    color: #444;
+}
+
+/* พื้นหลังตกแต่ง */
+.background-blobs {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: -1;
+    background: radial-gradient(circle at 10% 20%, rgba(255, 140, 148, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(255, 170, 165, 0.1) 0%, transparent 40%);
+}
+
+header {
+    padding: 80px 20px;
+    text-align: center;
+}
+
+.header-glass {
+    display: inline-block;
+    padding: 20px 40px;
+    background: var(--glass);
+    backdrop-filter: blur(10px);
+    border-radius: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+}
+
+.container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+
+/* Grid ระบบ */
+.folder-grid, .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 30px;
+}
+
+/* การ์ดอัลบั้ม */
+.folder-card {
+    background: white;
+    padding: 50px 20px;
+    border-radius: 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 1px solid #eee;
+}
+
+.folder-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(255, 140, 148, 0.2);
+}
+
+.folder-icon { font-size: 50px; margin-bottom: 10px; }
+
+/* หน้าแกลเลอรี่ */
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+    background: white;
+    padding: 15px 25px;
+    border-radius: 20px;
+}
+
+.nav-btn, .add-btn-main {
+    border: none; padding: 10px 20px; border-radius: 12px; cursor: pointer; font-weight: 600;
+}
+
+.nav-btn { background: #eee; }
+.add-btn-main { background: var(--primary); color: white; }
+
+/* 3D Cards */
+.card-container { height: 380px; perspective: 1000px; }
+.card {
+    position: relative; width: 100%; height: 100%;
+    transform-style: preserve-3d; transition: 0.8s;
+}
+.card-container:hover .card { transform: rotateY(180deg); }
+
+.card-front, .card-back {
+    position: absolute; width: 100%; height: 100%;
+    backface-visibility: hidden; border-radius: 25px; overflow: hidden;
+}
+
+.card-front img { width: 100%; height: 100%; object-fit: cover; }
+
+.card-back {
+    background: linear-gradient(45deg, var(--primary), var(--secondary));
+    color: white; transform: rotateY(180deg);
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    padding: 20px; text-align: center;
+}
+
+.delete-btn {
+    margin-top: 15px; background: rgba(0,0,0,0.2);
+    border: 1px solid white; color: white; padding: 5px 15px;
+    border-radius: 8px; cursor: pointer;
+}
+
+.delete-btn:hover { background: white; color: red; }
+
+/* Modal */
+.modal {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 100;
+}
+
+.modal-card {
+    background: white; width: 90%; max-width: 450px;
+    margin: 100px auto; padding: 30px; border-radius: 25px;
+}
+
+.modal-card input, .modal-card textarea {
+    width: 100%; margin: 10px 0; padding: 12px; border-radius: 10px; border: 1px solid #ddd;
+}
+
+.modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+.save-btn { flex: 1; background: var(--primary); color: white; border: none; border-radius: 10px; padding: 12px; cursor: pointer; }
+.cancel-btn { flex: 1; background: #eee; border: none; border-radius: 10px; padding: 12px; cursor: pointer; }
+
+/* Lightbox */
+.lightbox-content img { max-width: 90%; max-height: 80vh; margin-top: 50px; border-radius: 20px; }
+
+/* Animation */
+.page-fade { animation: fadeIn 0.5s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+body {
+    /* พื้นหลังสีพาสเทลนุ่มๆ */
+    background-color: #f0f7ff; 
+    /* สร้างลวดลายจุด (Polka Dot) เล็กๆ ให้ดูเหมือนกระดาษเขียนการ์ตูน */
+    background-image: radial-gradient(#d1e4ff 2px, transparent 2px);
+    background-size: 30px 30px;
+    color: #5a5a5a;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* เพิ่มก้อนเมฆการ์ตูนลอยไปมาที่พื้นหลัง */
+body::before {
+    content: "☁️";
+    position: fixed;
+    top: 10%;
+    left: -50px;
+    font-size: 50px;
+    opacity: 0.3;
+    animation: moveClouds 20s linear infinite;
+    z-index: -1;
+}
+
+body::after {
+    content: "☁️";
+    position: fixed;
+    top: 40%;
+    right: -50px;
+    font-size: 40px;
+    opacity: 0.3;
+    animation: moveClouds 25s linear infinite reverse;
+    z-index: -1;
+}
+
+@keyframes moveClouds {
+    from { transform: translateX(-100px); }
+    to { transform: translateX(calc(100vw + 100px)); }
+}
+
+/* ปรับปรุงส่วน Header ให้ดูเป็นการ์ตูนมากขึ้น */
+header {
+    background: #ffffff;
+    border: 4px solid #ffb6c1; /* เส้นขอบหนาๆ แบบการ์ตูน */
+    border-radius: 0 0 40px 40px;
+    margin: 0 auto 40px;
+    max-width: 800px;
+    padding: 30px;
+    box-shadow: 10px 10px 0px #ffb6c1; /* เงาแข็งๆ แบบ 2D */
+}
+
+header h1 {
+    color: #ff8fa3;
+    font-size: 2.5rem;
+}
+
+/* ปรับการ์ดอัลบั้ม (Folder Card) ให้ดูเหมือนสมุดภาพ */
+.folder-card {
+    background: #ffffff;
+    border: 3px solid #6eb5ff;
+    border-radius: 25px;
+    box-shadow: 8px 8px 0px #6eb5ff;
+    transition: all 0.3s ease;
+}
+
+.folder-card:hover {
+    transform: translate(-4px, -4px); /* เด้งสวนทางกับเงา */
+    box-shadow: 12px 12px 0px #6eb5ff;
+    background: #fdfdff;
+}
+
+/* ปรับปุ่มให้ดูเหมือนปุ่มในการ์ตูน */
+.btn-add, .save-btn {
+    background: #ffb6c1;
+    border: 3px solid #ff8fa3;
+    border-radius: 15px;
+    box-shadow: 0 5px 0 #ff8fa3;
+    color: white;
+    font-size: 1.1rem;
+}
+
+.btn-add:active, .save-btn:active {
+    transform: translateY(4px);
+    box-shadow: 0 1px 0 #ff8fa3;
+}
+@import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap');
+
+:root {
+    --main-pink: #ffb6c1;
+    --dark-pink: #ff8fa3;
+    --main-blue: #6eb5ff;
+    --bg-color: #f0f7ff;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Prompt', sans-serif; }
+
+body {
+    background-color: var(--bg-color);
+    background-image: radial-gradient(#d1e4ff 2px, transparent 2px);
+    background-size: 30px 30px;
+    overflow-x: hidden;
+}
+
+/* ตกแต่งก้อนเมฆลอย */
+.cloud-bg, .cloud-bg-2 {
+    position: fixed; font-size: 60px; opacity: 0.3; z-index: -1;
+    animation: floatCloud 20s linear infinite;
+}
+.cloud-bg { top: 10%; left: -100px; }
+.cloud-bg-2 { top: 50%; right: -100px; animation-duration: 25s; animation-direction: reverse; }
+
+@keyframes floatCloud {
+    from { transform: translateX(-100px); }
+    to { transform: translateX(110vw); }
+}
+
+header {
+    text-align: center; padding: 40px 20px;
+}
+
+.header-container {
+    display: inline-block; background: white; padding: 20px 40px;
+    border: 4px solid var(--dark-pink); border-radius: 30px;
+    box-shadow: 8px 8px 0px var(--dark-pink);
+}
+
+.header-container h1 { color: var(--dark-pink); font-size: 2.5rem; }
+
+.container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+/* Grid 6 ช่อง */
+.folder-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 30px; padding-bottom: 50px;
+}
+
+.folder-card {
+    background: white; border: 4px solid var(--main-blue);
+    border-radius: 30px; padding: 40px 20px; text-align: center;
+    cursor: pointer; transition: 0.3s;
+    box-shadow: 8px 8px 0px var(--main-blue);
+}
+
+.folder-card:hover {
+    transform: translate(-4px, -4px);
+    box-shadow: 12px 12px 0px var(--main-blue);
+}
+
+.folder-card .icon { font-size: 4rem; display: block; margin-bottom: 15px; }
+
+/* หน้า Gallery */
+.gallery-nav {
+    display: flex; justify-content: space-between; align-items: center;
+    background: white; padding: 20px; border-radius: 20px;
+    border: 3px solid #ddd; margin-bottom: 30px;
+}
+
+.photo-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 25px; perspective: 1000px;
+}
+
+/* 3D Cards */
+.card-container { height: 350px; cursor: pointer; }
+.card {
+    position: relative; width: 100%; height: 100%;
+    transform-style: preserve-3d; transition: 0.8s;
+}
+.card-container:hover .card { transform: rotateY(180deg); }
+
+.card-front, .card-back {
+    position: absolute; width: 100%; height: 100%;
+    backface-visibility: hidden; border-radius: 20px; overflow: hidden;
+    border: 3px solid #ddd;
+}
+
+.card-front img { width: 100%; height: 100%; object-fit: cover; }
+.card-back {
+    background: var(--main-pink); color: white; transform: rotateY(180deg);
+    display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px;
+}
+
+/* ปุ่มต่างๆ */
+.btn-back, .btn-add, .btn-save-final {
+    padding: 10px 20px; border-radius: 15px; border: none; cursor: pointer; font-weight: 600;
+}
+.btn-add { background: var(--dark-pink); color: white; box-shadow: 0 4px 0 #d66d7e; }
+.btn-save-final { background: var(--main-blue); color: white; width: 100%; margin-top: 15px; box-shadow: 0 4px 0 #5294d6; }
+
+.btn-delete {
+    margin-top: 15px; background: white; color: red; border: 2px solid red;
+    padding: 5px 10px; border-radius: 10px; cursor: pointer;
+}
+
+/* Modal */
+.modal, .modal-overlay {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); z-index: 1000;
+}
+
+.modal-content {
+    background: white; width: 90%; max-width: 500px; margin: 50px auto;
+    padding: 30px; border-radius: 30px; border: 5px solid var(--main-pink);
+}
+
+.form-item { margin-bottom: 15px; }
+.form-item input, .form-item textarea {
+    width: 100%; padding: 10px; border-radius: 10px; border: 2px solid #eee;
+}
+
+.lightbox-wrap { text-align: center; padding-top: 50px; }
+.lightbox-wrap img { max-width: 90%; max-height: 70vh; border: 5px solid white; border-radius: 20px; }
