@@ -27,42 +27,43 @@ document.addEventListener("DOMContentLoaded", () => {
     window.openModal = () => uploadModal.style.display = "block";
     window.closeModal = () => uploadModal.style.display = "none";
 
-    // เซฟรูปใหม่ (ชื่อฟังก์ชันตรงกับ HTML)
-    window.saveNewPhoto = () => {
-        const fileInput = document.getElementById("img-input");
-        const titleInput = document.getElementById("title-input").value;
-        const detailInput = document.getElementById("detail-input").value;
+    // ฟังก์ชันเซฟรูปลง Cloud (ทุกคนจะเห็นรูปนี้)
+window.saveNewPhoto = async () => {
+    const file = document.getElementById("img-input").files[0];
+    const title = document.getElementById("title-input").value;
+    const detail = document.getElementById("detail-input").value;
 
-        if (!fileInput.files[0]) return alert("เลือกรูปก่อนนะเจ้าทาส 🐱");
+    if (!file) return alert("เลือกรูปก่อนนะ!");
 
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            memories.push({
-                id: Date.now(),
-                category: currentCategory,
-                src: e.target.result,
-                title: titleInput || "ความทรงจำใหม่",
-                detail: detailInput || ""
-            });
-            localStorage.setItem("bay_memories_v3", JSON.stringify(memories));
-            render();
-            closeModal();
-            // ล้างค่าในช่องกรอก
-            fileInput.value = "";
-            document.getElementById("title-input").value = "";
-            document.getElementById("detail-input").value = "";
-        };
-        reader.readAsDataURL(fileInput.files[0]);
-    };
+    // 1. อัปโหลดรูปไปที่ Firebase Storage
+    const storageRef = ref(window.storage, 'memories/' + Date.now() + "_" + file.name);
+    const snapshot = await uploadBytes(storageRef, file);
+    const downloadURL = await getDownloadURL(snapshot.ref);
 
-    // ลบรูป
-    window.deletePhoto = (id) => {
-        if (confirm("ลบรูปนี้ใช่ไหม? 🥺")) {
-            memories = memories.filter(m => m.id !== id);
-            localStorage.setItem("bay_memories_v3", JSON.stringify(memories));
-            render();
-        }
-    };
+    // 2. บันทึกข้อมูลลง Firestore (Database)
+    await addDoc(collection(window.db, "photos"), {
+        src: downloadURL,
+        title: title || "ความทรงจำ",
+        detail: detail || "",
+        category: currentCategory,
+        createdAt: new Date()
+    });
+
+    closeModal();
+    alert("ลงรูปสำเร็จ! เพื่อนๆ เห็นแล้วนะ");
+};
+
+// ฟังก์ชันดึงรูปจาก Cloud แบบ Real-time (ใครลงรูปปุ๊บ เด้งขึ้นปั๊บ)
+function listenToPhotos() {
+    const q = query(collection(window.db, "photos"), orderBy("createdAt", "desc"));
+    onSnapshot(q, (snapshot) => {
+        allPhotos = []; // เก็บรูปทั้งหมดไว้แสดงผล
+        snapshot.forEach((doc) => {
+            allPhotos.push({ id: doc.id, ...doc.data() });
+        });
+        render(); // เรียกฟังก์ชันวาดหน้าจอเดิมที่มีอยู่
+    });
+}
 
     // วาดรูปในหน้า Gallery
     function render() {
