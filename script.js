@@ -1,110 +1,96 @@
 document.addEventListener("DOMContentLoaded", () => {
-    let memories = JSON.parse(localStorage.getItem("bay_memories_v3")) || [];
-    let currentCategory = "";
-
-    const albumPage = document.getElementById("album-page");
-    const galleryPage = document.getElementById("gallery-page");
-    const galleryContainer = document.getElementById("gallery-container");
-    const albumTitle = document.getElementById("album-title-display");
+    let memories = JSON.parse(localStorage.getItem("bay_crush_log")) || [];
+    const memoryFeed = document.getElementById("memory-feed");
     const uploadModal = document.getElementById("upload-modal");
 
-    // เปิดอัลบั้ม
-    window.openAlbum = (cat, title) => {
-        currentCategory = cat;
-        albumTitle.innerText = title;
-        albumPage.style.display = "none";
-        galleryPage.style.display = "block";
-        render();
+    window.openModal = () => {
+        uploadModal.style.display = "block";
+        // ตั้งค่าเวลาปัจจุบันให้อัตโนมัติ
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        document.getElementById("memory-datetime").value = now.toISOString().slice(0, 16);
     };
-
-    // ย้อนกลับ
-    window.goBack = () => {
-        albumPage.style.display = "block";
-        galleryPage.style.display = "none";
-    };
-
-    // เปิด-ปิด Modal
-    window.openModal = () => uploadModal.style.display = "block";
     window.closeModal = () => uploadModal.style.display = "none";
 
-    // ฟังก์ชันเซฟรูปลง Cloud (ทุกคนจะเห็นรูปนี้)
-window.saveNewPhoto = async () => {
-    const file = document.getElementById("img-input").files[0];
-    const title = document.getElementById("title-input").value;
-    const detail = document.getElementById("detail-input").value;
+    window.saveNewMemory = () => {
+        const datetime = document.getElementById("memory-datetime").value;
+        const mediaInput = document.getElementById("media-input").files[0];
+        const reason = document.getElementById("memory-reason").value;
+        const story = document.getElementById("memory-story").value;
 
-    if (!file) return alert("เลือกรูปก่อนนะ!");
+        if (!datetime || (!reason && !story)) return alert("กรุณาใส่วันที่และเขียนอะไรสักหน่อยนะครับ");
 
-    // 1. อัปโหลดรูปไปที่ Firebase Storage
-    const storageRef = ref(window.storage, 'memories/' + Date.now() + "_" + file.name);
-    const snapshot = await uploadBytes(storageRef, file);
-    const downloadURL = await getDownloadURL(snapshot.ref);
+        if (mediaInput) {
+            // ถ้ามีการแนบไฟล์
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                saveData(e.target.result, mediaInput.type.startsWith('video') ? 'video' : 'image');
+            };
+            reader.readAsDataURL(mediaInput);
+        } else {
+            // ถ้าเป็นบันทึกข้อความอย่างเดียว
+            saveData(null, 'text');
+        }
 
-    // 2. บันทึกข้อมูลลง Firestore (Database)
-    await addDoc(collection(window.db, "photos"), {
-        src: downloadURL,
-        title: title || "ความทรงจำ",
-        detail: detail || "",
-        category: currentCategory,
-        createdAt: new Date()
-    });
+        function saveData(src, type) {
+            const memory = {
+                id: Date.now(),
+                type: type,
+                src: src,
+                datetime: datetime,
+                reason: reason || "อัปเดตประจำวัน",
+                story: story || ""
+            };
+            memories.unshift(memory);
+            localStorage.setItem("bay_crush_log", JSON.stringify(memories));
+            renderFeed();
+            closeModal();
+            // Clear inputs
+            document.getElementById("media-input").value = "";
+            document.getElementById("memory-reason").value = "";
+            document.getElementById("memory-story").value = "";
+        }
+    };
 
-    closeModal();
-    alert("ลงรูปสำเร็จ! เพื่อนๆ เห็นแล้วนะ");
-};
+    window.deleteMemory = (id) => {
+        if(confirm("ลบบันทึกนี้ใช่ไหม?")) {
+            memories = memories.filter(m => m.id !== id);
+            localStorage.setItem("bay_crush_log", JSON.stringify(memories));
+            renderFeed();
+        }
+    };
 
-// ฟังก์ชันดึงรูปจาก Cloud แบบ Real-time (ใครลงรูปปุ๊บ เด้งขึ้นปั๊บ)
-function listenToPhotos() {
-    const q = query(collection(window.db, "photos"), orderBy("createdAt", "desc"));
-    onSnapshot(q, (snapshot) => {
-        allPhotos = []; // เก็บรูปทั้งหมดไว้แสดงผล
-        snapshot.forEach((doc) => {
-            allPhotos.push({ id: doc.id, ...doc.data() });
-        });
-        render(); // เรียกฟังก์ชันวาดหน้าจอเดิมที่มีอยู่
-    });
-}
-
-    // วาดรูปในหน้า Gallery
-    function render() {
-        galleryContainer.innerHTML = "";
-        const data = memories.filter(m => m.category === currentCategory);
-
-        if (data.length === 0) {
-            galleryContainer.innerHTML = `<p style="grid-column: 1/-1; text-align: center; padding: 100px; color: #888;">อัลบั้มนี้ยังว่างอยู่ เพิ่มรูปกันเลย! ✨</p>`;
+    function renderFeed() {
+        memoryFeed.innerHTML = "";
+        if (memories.length === 0) {
+            memoryFeed.innerHTML = `<div style="text-align:center; padding: 80px; color: #ccc;">ยังไม่มีการอัปเดต... เริ่มเขียนเรื่องราวดีๆ วันนี้เลย ✨</div>`;
             return;
         }
 
-        data.forEach(item => {
-            const container = document.createElement("div");
-            container.className = "card-container";
-            container.innerHTML = `
-                <div class="card">
-                    <div class="card-front">
-                        <img src="${item.src}">
-                        <div style="position: absolute; bottom: 0; background: rgba(0,0,0,0.5); color: white; width: 100%; padding: 10px; text-align: center;">${item.title}</div>
-                    </div>
-                    <div class="card-back">
-                        <h3>${item.title}</h3>
-                        <p>${item.detail}</p>
-                        <button class="btn-delete" onclick="event.stopPropagation(); deletePhoto(${item.id})">🗑️ ลบรูปนี้</button>
-                    </div>
-                </div>
+        memories.forEach(m => {
+            const card = document.createElement("div");
+            card.className = `memory-card ${m.type === 'text' ? 'text-only-card' : ''}`;
+            
+            const d = new Date(m.datetime);
+            const dateStr = d.toLocaleDateString('th-TH', { 
+                day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' 
+            });
+
+            let mediaHTML = "";
+            if (m.type === 'video') mediaHTML = `<video src="${m.src}" controls class="memory-media"></video>`;
+            else if (m.type === 'image') mediaHTML = `<img src="${m.src}" class="memory-media">`;
+
+            card.innerHTML = `
+                <button class="delete-btn" onclick="deleteMemory(${m.id})">×</button>
+                <span class="memory-time">📅 ${dateStr} น.</span>
+                <span class="label-tag">${m.type === 'text' ? '📝 Daily Update' : '📸 Moment'}</span>
+                ${mediaHTML}
+                <h3>${m.reason}</h3>
+                <p>${m.story}</p>
             `;
-            container.onclick = () => openLightbox(item.src, item.title);
-            galleryContainer.appendChild(container);
+            memoryFeed.appendChild(card);
         });
     }
 
-    // ดูรูปใหญ่
-    window.openLightbox = (src, title) => {
-        const lightbox = document.getElementById("lightbox");
-        document.getElementById("lightbox-img").src = src;
-        document.getElementById("lightbox-caption").innerText = title;
-        lightbox.style.display = "block";
-    };
-
-    window.closeLightbox = () => {
-        document.getElementById("lightbox").style.display = "none";
-    };
+    renderFeed();
 });
