@@ -446,28 +446,33 @@ function resetNoButton() {
 
 // Escalating "escape" behaviour for the No button
 let noJustClicked = false; // prevent mouseenter firing right after click
+let noOnCooldown  = false; // prevent any double-fire within same frame
 
 btnNo.addEventListener("mouseenter", handleNoHover);
-btnNo.addEventListener("touchstart", handleNoHover, { passive: true });
+// touchstart removed — touchend fires after click on mobile; use click only
 
 function handleNoHover() {
-  if (!noButtonActive) return;
-  if (noJustClicked) return; // skip — click already handled this
+  if (!noButtonActive || noJustClicked || noOnCooldown) return;
+  noOnCooldown = true;
+  setTimeout(() => { noOnCooldown = false; }, 350);
   escapeNoButton();
   showNoReaction(noClickCount);
 }
 
-btnNo.addEventListener("click", () => {
-  if (!noButtonActive) return;
+btnNo.addEventListener("click", (e) => {
+  e.preventDefault(); // stop any ghost touch→click double fire
+  if (!noButtonActive || noOnCooldown) return;
+  noOnCooldown  = true;
   noJustClicked = true;
-  setTimeout(() => { noJustClicked = false; }, 400);
+  setTimeout(() => { noOnCooldown = false; }, 350);
+  setTimeout(() => { noJustClicked = false; }, 500);
   escapeNoButton();
   showNoReaction(noClickCount);
 });
 
 function escapeNoButton() {
   noClickCount++;
-  const maxEscapes = 8;
+  const maxEscapes = 10;
 
   // Shrink factor
   const shrink = Math.max(0.28, 1 - noClickCount * 0.1);
@@ -501,6 +506,8 @@ function escapeNoButton() {
     "อย่ากดเลย 😤",
     "หนีแล้วนะ! 🏃",
     "จับฉันไม่ได้ 🙊",
+    "เหนื่อยแล้ว... 😮‍💨",
+    "ยอมแพ้ได้แล้วนะ 🥺",
     "หมดแล้ว~ ✨",
   ];
   const idx = Math.min(noClickCount - 1, noTexts.length - 1);
@@ -652,7 +659,10 @@ document.addEventListener("click", (e) => {
    ───────────────────────────────────────────────────── */
 
 let lastTrailTime = 0;
+const isTouchDevice = () => window.matchMedia("(pointer: coarse)").matches;
+
 document.addEventListener("mousemove", (e) => {
+  if (isTouchDevice()) return; // skip trail on touch screens
   const now = Date.now();
   if (now - lastTrailTime < 60) return;
   lastTrailTime = now;
