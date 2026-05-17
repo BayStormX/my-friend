@@ -417,7 +417,7 @@ btnNext2.addEventListener("click", () => {
   setTimeout(() => {
     initHeartCanvas();
     const q = document.getElementById("bigQuestion");
-    typewriter(q, "ລອງຄົບກັນເບິ່ງບໍ່ ຮິຮິ 💌", 65);
+    typewriter(q, "จะเป็นแฟนกันได้มั้ย? 💌", 65);
   }, 500);
   startFloatingHearts(700);
   setupNoButton();
@@ -445,17 +445,22 @@ function resetNoButton() {
 }
 
 // Escalating "escape" behaviour for the No button
+let noJustClicked = false; // prevent mouseenter firing right after click
+
 btnNo.addEventListener("mouseenter", handleNoHover);
 btnNo.addEventListener("touchstart", handleNoHover, { passive: true });
 
 function handleNoHover() {
   if (!noButtonActive) return;
+  if (noJustClicked) return; // skip — click already handled this
   escapeNoButton();
+  showNoReaction(noClickCount);
 }
 
 btnNo.addEventListener("click", () => {
   if (!noButtonActive) return;
-  noClickCount++;
+  noJustClicked = true;
+  setTimeout(() => { noJustClicked = false; }, 400);
   escapeNoButton();
   showNoReaction(noClickCount);
 });
