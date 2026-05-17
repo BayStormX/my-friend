@@ -428,103 +428,140 @@ btnNext2.addEventListener("click", () => {
    ───────────────────────────────────────────────────── */
 
 function setupNoButton() {
-  noClickCount = 0;
+  noClickCount   = 0;
+  noLastFired    = 0;
+  noCurrentX     = 0;
+  noCurrentY     = 0;
   noButtonActive = true;
   resetNoButton();
+  // delay 120ms ให้ card render เสร็จก่อนอ่าน position
+  setTimeout(initNoButtonPosition, 120);
 }
 
 function resetNoButton() {
-  btnNo.style.cssText = "";
-  btnNo.style.position = "relative";
-  btnNo.style.transition = "transform 0.15s, opacity 0.4s";
-  btnNo.textContent = "ยังก่อน... 😅";
-  btnNo.style.opacity = "1";
+  btnNo.style.cssText       = "";
+  btnNo.style.position      = "";
+  btnNo.style.transition    = "none";
+  btnNo.style.animation     = "none";
+  btnNo.style.transform     = "none";
+  btnNo.textContent         = "ຍັງກ່ອນ... 😅";
+  btnNo.style.opacity       = "1";
   btnNo.style.pointerEvents = "auto";
-  btnNo.style.fontSize = "";
-  btnNo.style.padding = "";
+  btnNo.style.display       = "";
 }
 
-// Escalating "escape" behaviour for the No button
-let noJustClicked = false; // prevent mouseenter firing right after click
-let noOnCooldown  = false; // prevent any double-fire within same frame
+// ── NO BUTTON — หนีไปเรื่อยๆ 10 ครั้ง แล้วถึงหาย ──
+// ไม่มีการหดขนาด, มี animation bounce ทุกครั้งที่หนี
+// ใช้ timestamp cooldown กัน double-fire จาก touch→click
 
-btnNo.addEventListener("mouseenter", handleNoHover);
-// touchstart removed — touchend fires after click on mobile; use click only
+const NO_MAX   = 10;
+const NO_TEXTS = [
+  "ຍັງກ່ອນ... 😅",
+  "ຢ່າຟ້າວວ! 🫣",
+  "ຖ້າແປປນຶງ 🙈",
+  "ຂໍຄິດກ່ອນ 🤔",
+  "ຢ່າກົດເລີຍ 😤",
+  "ຫນີແລ້ວເດະະ! 🏃",
+  "ຈັບບໍ່ໄດ້ດອກກແບຮ່ 🙊",
+  "ເຫມື່ອຍແລ້ວນິ 😮‍💨",
+  "ຍອມແພ້ສາາເນາະ 🥺",
+  "ບ໊າຍບາຍໄປລະ~ 👋",
+];
 
-function handleNoHover() {
-  if (!noButtonActive || noJustClicked || noOnCooldown) return;
-  noOnCooldown = true;
-  setTimeout(() => { noOnCooldown = false; }, 350);
-  escapeNoButton();
-  showNoReaction(noClickCount);
+let noLastFired = 0;
+let noCurrentX  = 0;
+let noCurrentY  = 0;
+
+// วาง btnNo เป็น fixed ตั้งแต่แรก เพื่อให้ขยับได้อิสระ
+function initNoButtonPosition() {
+  // ไม่ต้องทำอะไร — ปุ่มอยู่ใน flow ปกติ
+  // runAwayNoButton จะ translate ใน card เอง
 }
 
-btnNo.addEventListener("click", (e) => {
-  e.preventDefault(); // stop any ghost touch→click double fire
-  if (!noButtonActive || noOnCooldown) return;
-  noOnCooldown  = true;
-  noJustClicked = true;
-  setTimeout(() => { noOnCooldown = false; }, 350);
-  setTimeout(() => { noJustClicked = false; }, 500);
-  escapeNoButton();
-  showNoReaction(noClickCount);
-});
+function runAwayNoButton() {
+  // ขยับในกรอบของ card โดยใช้ translate
+  // card กว้างสุด 480px, ปุ่มกว้างประมาณ 140px
+  // เลยจำกัด translate ไว้แค่ ±120px x, ±80px y
+  const maxX = 110;
+  const maxY = 70;
 
-function escapeNoButton() {
+  // สุ่มตำแหน่งใหม่ที่ต่างจากเดิม
+  const curX = noCurrentX || 0;
+  const curY = noCurrentY || 0;
+  let tx, ty, attempts = 0;
+  do {
+    tx = rand(-maxX, maxX);
+    ty = rand(-maxY, maxY);
+    attempts++;
+  } while (attempts < 20 && Math.abs(tx - curX) < 50 && Math.abs(ty - curY) < 50);
+
+  noCurrentX = tx;
+  noCurrentY = ty;
+
+  btnNo.style.transition = "transform 0.38s cubic-bezier(0.34,1.56,0.64,1)";
+  btnNo.style.transform  = `translate(${tx}px, ${ty}px)`;
+
+  // wiggle หลังถึงที่
+  setTimeout(() => {
+    btnNo.style.transition = "transform 0.38s cubic-bezier(0.34,1.56,0.64,1)";
+    btnNo.style.animation  = "none";
+    void btnNo.offsetWidth;
+    btnNo.style.animation  = "noWiggle 0.4s ease";
+  }, 400);
+}
+
+// inject keyframes สำหรับ wiggle
+(function injectNoStyles() {
+  const s = document.createElement("style");
+  s.textContent = `
+    @keyframes noWiggle {
+      0%   { transform: rotate(0deg) scale(1); }
+      20%  { transform: rotate(-10deg) scale(1.08); }
+      40%  { transform: rotate(10deg)  scale(1.08); }
+      60%  { transform: rotate(-6deg)  scale(1.04); }
+      80%  { transform: rotate(4deg)   scale(1.02); }
+      100% { transform: rotate(0deg)   scale(1); }
+    }
+    @keyframes noVanish {
+      0%   { opacity: 1; transform: scale(1) rotate(0); }
+      40%  { opacity: 0.8; transform: scale(1.2) rotate(-5deg); }
+      100% { opacity: 0; transform: scale(0) rotate(20deg); }
+    }
+  `;
+  document.head.appendChild(s);
+})();
+
+function handleNoAction(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  if (!noButtonActive) return;
+
+  const now = Date.now();
+  if (now - noLastFired < 700) return; // cooldown 700ms กัน double-fire เด็ดขาด
+  noLastFired = now;
+
   noClickCount++;
-  const maxEscapes = 10;
 
-  // Shrink factor
-  const shrink = Math.max(0.28, 1 - noClickCount * 0.1);
-  const opacity = Math.max(0.1, 1 - noClickCount * 0.11);
+  // เปลี่ยนข้อความ
+  btnNo.textContent = NO_TEXTS[Math.min(noClickCount - 1, NO_TEXTS.length - 1)];
 
-  // Move to random position within viewport
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-  const rect = btnNo.getBoundingClientRect();
-
-  // Random target within safe zone
-  const tx = rand(30, vw - 30);
-  const ty = rand(30, vh - 30);
-
-  btnNo.style.position = "fixed";
-  btnNo.style.zIndex   = "9999";
-  btnNo.style.left     = tx + "px";
-  btnNo.style.top      = ty + "px";
-  btnNo.style.transform = `scale(${shrink})`;
-  btnNo.style.transition = `left ${0.25 + noClickCount * 0.03}s cubic-bezier(0.68,-0.55,0.27,1.55), top ${0.25 + noClickCount * 0.03}s cubic-bezier(0.68,-0.55,0.27,1.55), transform 0.2s, opacity 0.4s, font-size 0.3s`;
-  btnNo.style.opacity  = opacity;
-  btnNo.style.fontSize = `${Math.max(0.5, 0.95 - noClickCount * 0.07)}rem`;
-  btnNo.style.padding  = `${Math.max(4, 10 - noClickCount * 0.8)}px ${Math.max(8, 24 - noClickCount * 2)}px`;
-
-  // Funny text changes
-  const noTexts = [
-    "ยังก่อน... 😅",
-    "อย่าเพิ่ง! 🫣",
-    "รอแป๊บ 🙈",
-    "ขอคิดก่อนน 🤔",
-    "อย่ากดเลย 😤",
-    "หนีแล้วนะ! 🏃",
-    "จับฉันไม่ได้ 🙊",
-    "เหนื่อยแล้ว... 😮‍💨",
-    "ยอมแพ้ได้แล้วนะ 🥺",
-    "หมดแล้ว~ ✨",
-  ];
-  const idx = Math.min(noClickCount - 1, noTexts.length - 1);
-  btnNo.textContent = noTexts[idx];
-
-  // After max escapes: vanish the No button
-  if (noClickCount >= maxEscapes) {
-    setTimeout(() => {
-      btnNo.style.opacity = "0";
-      btnNo.style.transform = `scale(0)`;
-      setTimeout(() => {
-        btnNo.style.display = "none";
-        noButtonActive = false;
-      }, 400);
-    }, 300);
+  if (noClickCount >= NO_MAX) {
+    // ครั้งที่ 10 — หายไปพร้อม animation
+    noButtonActive = false;
+    btnNo.style.pointerEvents = "none";
+    btnNo.style.transition    = "transform 0.5s ease, opacity 0.5s ease";
+    btnNo.style.transform     = `translate(${noCurrentX}px, ${noCurrentY}px) scale(0) rotate(20deg)`;
+    btnNo.style.opacity       = "0";
+    setTimeout(() => { btnNo.style.display = "none"; }, 550);
+  } else {
+    runAwayNoButton();
   }
+
+  showNoReaction(noClickCount);
 }
+
+btnNo.addEventListener("touchend", handleNoAction, { passive: false });
+btnNo.addEventListener("click",    handleNoAction);
 
 function showNoReaction(count) {
   const reactions = [
