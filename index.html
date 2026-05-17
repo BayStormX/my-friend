@@ -1,60 +1,200 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Our Progress Diary 🤍</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&family=Mali:wght@400;600&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>💌 มีเรื่องอยากบอก...</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600&family=Prompt:wght@300;400;600;700&family=Sarabun:wght@300;400;500&display=swap" rel="stylesheet" />
 </head>
 <body>
 
-    <div class="soft-bg"></div>
+  <!-- Floating hearts background -->
+  <div class="bg-hearts" id="bgHearts"></div>
 
-    <header>
-        <div class="header-content">
-            <h1>Dear my Kindest Soul</h1>
-            <p>บันทึกทุกความคืบหน้า... ของเราสองคน 🌿</p>
-            <div class="btn-group">
-                <button class="btn-add-memory" onclick="openModal()">+ บันทึกเรื่องราววันนี้</button>
-            </div>
+  <!-- Sparkles -->
+  <div class="sparkles-container" id="sparkles"></div>
+
+  <!-- Cursor trail -->
+  <div class="cursor-glow" id="cursorGlow"></div>
+
+  <!-- Screen 1: Intro -->
+  <section class="screen active" id="screen1">
+    <div class="screen-inner">
+      <div class="envelope-wrapper">
+        <div class="envelope" id="envelope">
+          <div class="envelope-flap"></div>
+          <div class="envelope-body">
+            <div class="envelope-letter">💌</div>
+          </div>
+          <div class="envelope-shine"></div>
         </div>
-    </header>
-
-    <main class="container">
-        <div id="memory-feed" class="memory-feed"></div>
-    </main>
-
-    <div id="upload-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" onclick="closeModal()">&times;</span>
-            <h2>✍️ วันนี้เป็นยังไงบ้าง?</h2>
-            
-            <div class="input-group">
-                <label>📅 วันที่และเวลา:</label>
-                <input type="datetime-local" id="memory-datetime">
-            </div>
-
-            <div class="input-group">
-                <label>🖼️ รูปภาพหรือวิดีโอ (ถ้ามี):</label>
-                <input type="file" id="media-input" accept="image/*,video/*">
-                <small>*สามารถข้ามได้ถ้าต้องการบันทึกแค่ข้อความ*</small>
-            </div>
-
-            <div class="input-group">
-                <label>✨ ความคืบหน้า / หัวข้อวันนี้:</label>
-                <input type="text" id="memory-reason" placeholder="เช่น วันนี้คุยกันนานขึ้น, เขาบอกฝันดีด้วย...">
-            </div>
-
-            <div class="input-group">
-                <label>📝 รายละเอียดเหตุการณ์ / ความรู้สึก:</label>
-                <textarea id="memory-story" placeholder="วันนี้มีอะไรคืบหน้าบ้าง? เขาน่ารักยังไง..."></textarea>
-            </div>
-
-            <button class="btn-save" onclick="saveNewMemory()">บันทึกความทรงจำ ✨</button>
-        </div>
+        <div class="envelope-glow-ring"></div>
+      </div>
+      <h1 class="title-main">มีเรื่องอยากบอกน่ะ...</h1>
+      <p class="subtitle">กดซองจดหมายเพื่ออ่านต่อ 🌸</p>
+      <div class="bounce-arrow">↓</div>
     </div>
+  </section>
 
-    <script src="script.js"></script>
+  <!-- Screen 2: Letter open animation -->
+  <section class="screen" id="screen2">
+    <div class="screen-inner">
+      <div class="letter-card" id="letterCard">
+        <div class="letter-header">
+          <span class="letter-stamp">💕</span>
+          <span class="letter-date">วันที่ฉันตัดสินใจ</span>
+        </div>
+        <div class="letter-lines">
+          <div class="letter-line" style="--delay:0.1s">ถึง... เธอคนนั้น 🌷</div>
+          <div class="letter-line" style="--delay:0.4s">ฉันนั่งคิดจะเขียนจดหมายนี้มานานมากแล้ว</div>
+          <div class="letter-line" style="--delay:0.7s">แต่ทุกครั้งที่เริ่ม มือมันสั่น หัวใจมันเต้นแรง</div>
+          <div class="letter-line" style="--delay:1.0s">วันนี้ขอกล้าสักครั้งนึงนะ 💪</div>
+        </div>
+        <div class="letter-footer">
+          <div class="wax-seal">💌</div>
+        </div>
+      </div>
+      <button class="btn-next" id="btn2to3">อ่านต่อเลย! →</button>
+    </div>
+  </section>
+
+  <!-- Screen 3: Reasons why -->
+  <section class="screen" id="screen3">
+    <div class="screen-inner">
+      <h2 class="section-title">ทำไมถึงชอบเธอ? 🤔</h2>
+      <div class="reasons-grid" id="reasonsGrid">
+        <div class="reason-card" data-emoji="😊" data-reason="รอยยิ้มของเธอ" data-desc="ทุกครั้งที่เธอยิ้ม โลกทั้งใบสว่างขึ้นเลยนะ ไม่ได้พูดเกินจริง!"></div>
+        <div class="reason-card" data-emoji="🧠" data-reason="ความฉลาดของเธอ" data-desc="เธอฉลาดมากเลย ทุกเรื่องที่เธอพูดมันน่าสนใจไปหมด"></div>
+        <div class="reason-card" data-emoji="🤣" data-reason="ความตลกของเธอ" data-desc="เธอทำให้ฉันหัวเราะได้ตลอด แบบหัวเราะจากข้างในเลย!"></div>
+        <div class="reason-card" data-emoji="💪" data-reason="ความแข็งแกร่ง" data-desc="เธอผ่านเรื่องยากๆ มาได้เสมอ มันทำให้ฉันแอดไมร์มากๆ"></div>
+        <div class="reason-card" data-emoji="🌸" data-reason="ความใจดี" data-desc="เธอมีใจดีกับทุกคน ไม่เคยเห็นเธอทำร้ายใครเลย"></div>
+        <div class="reason-card" data-emoji="✨" data-reason="ทุกๆ อย่างเลย" data-desc="จริงๆ แล้วทุกอย่างในตัวเธอมันสมบูรณ์แบบในแบบของมัน"></div>
+      </div>
+      <p class="hint-text">👆 กดที่การ์ดเพื่อดูเพิ่มเติมนะ!</p>
+      <button class="btn-next" id="btn3to4">ไปต่อ! 💕</button>
+    </div>
+  </section>
+
+  <!-- Screen 4: Memory timeline -->
+  <section class="screen" id="screen4">
+    <div class="screen-inner">
+      <h2 class="section-title">ความทรงจำที่มีร่วมกัน 📸</h2>
+      <div class="timeline">
+        <div class="timeline-item left" data-delay="0">
+          <div class="timeline-dot">⭐</div>
+          <div class="timeline-content">
+            <div class="timeline-emoji">🌅</div>
+            <h3>ครั้งแรกที่เจอกัน</h3>
+            <p>ตอนนั้นฉันไม่รู้เลยว่าวันนี้จะเปลี่ยนชีวิตฉัน แค่เห็นเธอครั้งแรกก็รู้สึกพิเศษแล้ว</p>
+          </div>
+        </div>
+        <div class="timeline-item right" data-delay="200">
+          <div class="timeline-dot">💬</div>
+          <div class="timeline-content">
+            <div class="timeline-emoji">☕</div>
+            <h3>คุยกันครั้งแรก</h3>
+            <p>คุยกันไปเรื่อยๆ แล้วก็ไม่อยากให้หยุด รู้สึกว่าเวลามันผ่านไปเร็วมากเลยตอนอยู่กับเธอ</p>
+          </div>
+        </div>
+        <div class="timeline-item left" data-delay="400">
+          <div class="timeline-dot">💭</div>
+          <div class="timeline-content">
+            <div class="timeline-emoji">🌙</div>
+            <h3>ตอนที่เริ่มรู้สึก</h3>
+            <p>มีวันนึงที่ฉันนั่งคิดถึงเธออยู่คนเดียวแล้วก็อมยิ้มโดยไม่รู้ตัว ตอนนั้นแหละที่รู้ว่า...</p>
+          </div>
+        </div>
+        <div class="timeline-item right" data-delay="600">
+          <div class="timeline-dot">💖</div>
+          <div class="timeline-content">
+            <div class="timeline-emoji">🎯</div>
+            <h3>วันที่ตัดสินใจ</h3>
+            <p>ฉันตัดสินใจว่าต้องบอกเธอ จะเอาแต่ชอบอยู่ในใจมันไม่พอแล้ว!</p>
+          </div>
+        </div>
+      </div>
+      <button class="btn-next" id="btn4to5">ถัดไป ✨</button>
+    </div>
+  </section>
+
+  <!-- Screen 5: Mini game - catch hearts -->
+  <section class="screen" id="screen5">
+    <div class="screen-inner">
+      <h2 class="section-title">เล่นเกมก่อนนะ! 🎮</h2>
+      <p class="game-desc">จับหัวใจให้ครบ 10 ดวง แล้วจะไปต่อได้ 💕</p>
+      <div class="game-area" id="gameArea">
+        <div class="game-score">❤️ <span id="scoreCount">0</span>/10</div>
+        <div class="game-timer">⏱️ <span id="timerCount">20</span>s</div>
+        <div id="gameHearts"></div>
+        <div class="game-start-overlay" id="gameOverlay">
+          <button class="btn-game-start" id="startGame">เริ่มเกม! 🎮</button>
+        </div>
+      </div>
+      <button class="btn-next hidden" id="btn5to6">ไปขั้นตอนสำคัญ! 💌</button>
+    </div>
+  </section>
+
+  <!-- Screen 6: The big question -->
+  <section class="screen" id="screen6">
+    <div class="screen-inner confession-screen">
+      <div class="big-heart-anim" id="bigHeart">💖</div>
+      <div class="confession-text">
+        <h1 class="confession-title">ฉัน...</h1>
+        <div class="confession-words" id="confessionWords"></div>
+      </div>
+      <div class="question-box hidden" id="questionBox">
+        <h2 class="question-text">จะเป็นแฟนฉันได้มั้ย? 🥺</h2>
+        <div class="answer-buttons">
+          <button class="btn-yes" id="btnYes" onclick="handleYes()">ได้เลย! 💕</button>
+          <button class="btn-no" id="btnNo" onmouseover="moveNoButton(this)" onclick="handleNo(this)">ยังก่อน...</button>
+        </div>
+        <div class="no-counter hidden" id="noCounter">กด "ยังก่อน" ไปแล้ว <span id="noCount">0</span> ครั้ง 😢</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Screen 7: YES! Celebration -->
+  <section class="screen" id="screen7">
+    <div class="screen-inner celebration-screen">
+      <div class="fireworks-container" id="fireworks"></div>
+      <div class="celebration-content">
+        <div class="big-emoji-bounce">🎉</div>
+        <h1 class="celebration-title">ยินดีด้วยนะ! 🥳</h1>
+        <h2 class="celebration-sub">เราเป็นแฟนกันแล้วว!</h2>
+        <div class="promise-box">
+          <h3>💌 สัญญาจากฉัน</h3>
+          <ul class="promise-list">
+            <li>🌙 จะอยู่เคียงข้างเธอทุกวัน</li>
+            <li>☀️ จะทำให้เธอยิ้มได้เสมอ</li>
+            <li>🤝 จะซื่อสัตย์กับเธอตลอดไป</li>
+            <li>🍜 จะอยู่เป็นเพื่อนกินข้าวทุกมื้อ</li>
+            <li>💪 จะอยู่ตรงนี้เวลาเธอต้องการ</li>
+            <li>🌈 จะทำให้ทุกวันมีความหมาย</li>
+          </ul>
+        </div>
+        <div class="final-hearts" id="finalHearts"></div>
+        <button class="btn-share" onclick="shareConfession()">📲 แชร์ความสุขนี้!</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Screen 8: NO - sad screen -->
+  <section class="screen" id="screen8">
+    <div class="screen-inner sad-screen">
+      <div class="sad-content">
+        <div class="crying-emoji" id="cryingEmoji">😢</div>
+        <h2 class="sad-title">โอเคน่ะ... ไม่เป็นไร 🥲</h2>
+        <p class="sad-text">ฉันก็แค่อยากบอกให้รู้ว่าฉันชอบเธอมากน่ะ ไม่ว่าเธอจะตัดสินใจยังไง ฉันก็จะยังแคร์เธออยู่เสมอนะ 💕</p>
+        <div class="rain-container" id="rainContainer"></div>
+        <button class="btn-retry" onclick="goBackToQuestion()">🔄 คิดใหม่ได้นะ? 🥺</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Toast notifications -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="script.js"></script>
 </body>
 </html>
