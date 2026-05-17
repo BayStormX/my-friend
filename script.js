@@ -1,810 +1,815 @@
-/* ==========================================
-   💕 Love Confession - script.js
-   ========================================== */
+/* ===================================================
+   💌 CONFESSION PAGE — script.js
+   Full-featured, maximalist JS
+   =================================================== */
 
-// ==========================================
-// State
-// ==========================================
-let currentScreen = 1;
-let noCount = 0;
-let gameScore = 0;
-let gameTimer = 20;
-let gameInterval = null;
-let gameHeartInterval = null;
-let gameRunning = false;
-let gameOver = false;
-let confessionStep = 0;
-let confessionDone = false;
+"use strict";
 
-const TOTAL_SCREENS = 8;
-const CONFESSION_PHRASES = [
-  { text: "ชอบเธอ", class: "pink" },
-  { text: "มากๆ", class: "purple" },
-  { text: "เลยนะ!", class: "pink" },
-  { text: "💕", class: "" },
+/* ─────────────────────────────────────────────────────
+   CONFIG & DATA
+   ───────────────────────────────────────────────────── */
+
+const STORY_LINES = [
+  "รู้มั้ย... ช่วงนี้ฉันนึกถึงแกบ่อยมากเลย 🌸",
+  "ทุกครั้งที่เห็นแก ใจมันเต้นแรงขึ้นทุกที 💓",
+  "อยากคุยด้วยตลอดเวลาเลยอ่ะ ทำไมวะ 🤔",
+  "แล้วก็... ยิ้มทุกทีที่ได้รับข้อความจากแก 😊",
 ];
 
-const NO_MESSAGES = [
-  "อย่าเลยนะ!! 🥺",
-  "ลองกด 'ได้เลย' ดูก็ได้นะ...",
-  "ปุ่มนี้หายไปแล้วนะ 😅",
-  "มันหนีไปแล้ว!",
-  "เธอหากไม่เจอหรอก 555",
-  "คิดใหม่ได้เลย!! 💖",
-  "ปุ่มนี้จะเล็กลงเรื่อยๆ นะ 😂",
-  "อีกนิดเดียวก็พอแล้วนะ! 🌸",
-  "ฉันรอนะ... ไม่ไปไหนหรอก",
-  "โอเค ฉันยังรอ... 😢",
+const FEELINGS = [
+  "🌸 ตื่นเต้น", "💭 คิดถึงบ่อย", "😊 มีความสุข",
+  "🦋 ใจเต้นแรง", "☕ อยากนั่งคุย", "🌙 นึกถึงก่อนนอน",
+  "🎶 ฟังเพลงแล้วนึกถึง", "🥺 อยากอยู่ด้วยกัน",
+  "✨ รู้สึกดีทุกครั้ง", "💌 อยากส่งข้อความ",
 ];
 
-const TOAST_MESSAGES_SCREEN3 = [
-  "น่ารักดีมั้ย! 💕",
-  "กดทุกอันเลยนะ!",
-  "ยังมีอีก~ ✨",
+const CONFETTI_COLORS = [
+  "#ff6b9d","#ffb347","#7ee8c5","#87ceeb",
+  "#c8a4e8","#fff176","#ff80ab","#b2ff59",
 ];
 
-// ==========================================
-// Init
-// ==========================================
-document.addEventListener('DOMContentLoaded', () => {
-  initLoadingScreen();
-  initCursorGlow();
-  initBgHearts();
-  initProgressDots();
-  initEnvelope();
-  initButtons();
-  initReasonCards();
-  initGame();
-  initClickParticles();
-  initSparkles();
+const HEART_EMOJIS = ["💗","💖","💝","💞","💓","💕","❤️","🩷"];
+const SPARKLE_CHARS = ["✨","⭐","🌟","💫","✦","✧"];
+
+let currentStep = 0;
+let noClickCount = 0;
+let noButtonActive = true;
+let floatHeartTimer = null;
+let ambientHeartTimer = null;
+let heartAnimFrame = null;
+let feelingsSelected = 0;
+
+/* ─────────────────────────────────────────────────────
+   ELEMENT REFS
+   ───────────────────────────────────────────────────── */
+
+const scene        = document.getElementById("scene");
+const bgLayer      = document.getElementById("bgLayer");
+const firefliesEl  = document.getElementById("fireflies");
+const confettiEl   = document.getElementById("confettiContainer");
+const progressDots = document.querySelectorAll(".dot");
+
+const cardIntro    = document.getElementById("card-intro");
+const cardStory    = document.getElementById("card-story");
+const cardFeelings = document.getElementById("card-feelings");
+const cardQuestion = document.getElementById("card-question");
+const cardYes      = document.getElementById("card-yes");
+
+const btnStart  = document.getElementById("btnStart");
+const btnNext1  = document.getElementById("btnNext1");
+const btnNext2  = document.getElementById("btnNext2");
+const btnYes    = document.getElementById("btnYes");
+const btnNo     = document.getElementById("btnNo");
+const btnRestart = document.getElementById("btnRestart");
+
+/* ─────────────────────────────────────────────────────
+   BACKGROUND PARTICLES
+   ───────────────────────────────────────────────────── */
+
+function createBgParticles() {
+  const colors = ["#ffb3cc","#c8a4e8","#87ceeb","#7ee8c5","#ffe066"];
+  for (let i = 0; i < 28; i++) {
+    const el = document.createElement("div");
+    el.className = "bg-particle";
+    const size = rand(20, 80);
+    const color = colors[Math.floor(rand(0, colors.length))];
+    el.style.cssText = `
+      width:${size}px; height:${size}px;
+      left:${rand(0,100)}%;
+      background: radial-gradient(circle, ${color} 0%, transparent 70%);
+      animation-duration: ${rand(12,30)}s;
+      animation-delay: -${rand(0,20)}s;
+    `;
+    bgLayer.appendChild(el);
+  }
+}
+
+/* ─────────────────────────────────────────────────────
+   FIREFLIES
+   ───────────────────────────────────────────────────── */
+
+function createFireflies() {
+  for (let i = 0; i < 22; i++) {
+    const el = document.createElement("div");
+    el.className = "firefly";
+    el.style.cssText = `
+      left: ${rand(5,95)}%;
+      top:  ${rand(5,95)}%;
+      --dx:  ${rand(-120,120)}px;
+      --dy:  ${rand(-120,120)}px;
+      --dx2: ${rand(-200,200)}px;
+      --dy2: ${rand(-200,200)}px;
+      animation-duration: ${rand(6,16)}s;
+      animation-delay:   -${rand(0,12)}s;
+      width:  ${rand(4,8)}px;
+      height: ${rand(4,8)}px;
+    `;
+    firefliesEl.appendChild(el);
+  }
+}
+
+/* ─────────────────────────────────────────────────────
+   AMBIENT WOBBLE HEARTS (background decoration)
+   ───────────────────────────────────────────────────── */
+
+function createWobbleHearts() {
+  const emojis = ["💗","🌸","✦","💫","🌷","⭐"];
+  for (let i = 0; i < 16; i++) {
+    const el = document.createElement("div");
+    el.className = "wobble-heart";
+    const sz = rand(20, 55);
+    el.style.cssText = `
+      left: ${rand(0,100)}%;
+      top:  ${rand(0,100)}%;
+      --sz: ${sz}px;
+      font-size: ${sz}px;
+      --wx: ${rand(-30,30)}px;
+      --wy: ${rand(-30,30)}px;
+      animation-duration: ${rand(4,10)}s;
+      animation-delay: -${rand(0,8)}s;
+    `;
+    el.textContent = emojis[Math.floor(rand(0, emojis.length))];
+    document.body.appendChild(el);
+  }
+}
+
+/* ─────────────────────────────────────────────────────
+   FLOATING HEARTS (continuous ambient)
+   ───────────────────────────────────────────────────── */
+
+function spawnFloatHeart() {
+  const el = document.createElement("div");
+  el.className = "float-heart";
+  const emoji = HEART_EMOJIS[Math.floor(rand(0, HEART_EMOJIS.length))];
+  el.textContent = emoji;
+  el.style.cssText = `
+    left: ${rand(5,90)}%;
+    bottom: ${rand(0,15)}%;
+    font-size: ${rand(16,36)}px;
+    --r0: ${rand(-20,20)}deg;
+    --r1: ${rand(-25,25)}deg;
+    animation-duration: ${rand(3,6)}s;
+  `;
+  document.body.appendChild(el);
+  el.addEventListener("animationend", () => el.remove());
+}
+
+function startFloatingHearts(interval = 900) {
+  stopFloatingHearts();
+  spawnFloatHeart();
+  floatHeartTimer = setInterval(spawnFloatHeart, interval);
+}
+
+function stopFloatingHearts() {
+  if (floatHeartTimer) { clearInterval(floatHeartTimer); floatHeartTimer = null; }
+}
+
+/* ─────────────────────────────────────────────────────
+   SPARKLE BURST (on click / celebrate)
+   ───────────────────────────────────────────────────── */
+
+function spawnSparkles(x, y, count = 8) {
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement("div");
+    el.className = "sparkle";
+    el.textContent = SPARKLE_CHARS[Math.floor(rand(0, SPARKLE_CHARS.length))];
+    const angle = (i / count) * Math.PI * 2;
+    const dist  = rand(40, 100);
+    el.style.cssText = `
+      left: ${x}px; top: ${y}px;
+      --sx: ${Math.cos(angle) * dist}px;
+      --sy: ${Math.sin(angle) * dist}px;
+      font-size: ${rand(14,28)}px;
+      animation-delay: ${i * 0.04}s;
+    `;
+    document.body.appendChild(el);
+    el.addEventListener("animationend", () => el.remove());
+  }
+}
+
+document.addEventListener("click", (e) => {
+  if (currentStep >= 3) {
+    spawnSparkles(e.clientX, e.clientY, 6);
+  }
 });
 
-// ==========================================
-// Loading Screen
-// ==========================================
-function initLoadingScreen() {
-  const loader = document.createElement('div');
-  loader.className = 'loading-heart';
-  loader.innerHTML = '<div class="loading-heart-icon">💕</div>';
-  document.body.appendChild(loader);
+/* ─────────────────────────────────────────────────────
+   CONFETTI
+   ───────────────────────────────────────────────────── */
 
-  setTimeout(() => {
-    loader.classList.add('done');
-    setTimeout(() => loader.remove(), 500);
-  }, 1000);
-}
-
-// ==========================================
-// Cursor Glow
-// ==========================================
-function initCursorGlow() {
-  const glow = document.getElementById('cursorGlow');
-  let mouseX = 0, mouseY = 0;
-  let glowX = 0, glowY = 0;
-
-  document.addEventListener('mousemove', (e) => {
-    mouseX = e.clientX;
-    mouseY = e.clientY;
-  });
-
-  function animateCursor() {
-    glowX += (mouseX - glowX) * 0.12;
-    glowY += (mouseY - glowY) * 0.12;
-    glow.style.left = glowX + 'px';
-    glow.style.top = glowY + 'px';
-    requestAnimationFrame(animateCursor);
-  }
-  animateCursor();
-}
-
-// ==========================================
-// Background Floating Hearts
-// ==========================================
-function initBgHearts() {
-  const container = document.getElementById('bgHearts');
-  const heartEmojis = ['💕', '💖', '💗', '💓', '🌸', '✨', '⭐', '🌺', '💫', '🌷'];
-
-  for (let i = 0; i < 20; i++) {
-    createBgHeart(container, heartEmojis, i * 300);
-  }
-
-  setInterval(() => {
-    createBgHeart(container, heartEmojis, 0);
-  }, 1800);
-}
-
-function createBgHeart(container, emojis, delay) {
-  const heart = document.createElement('div');
-  heart.className = 'bg-heart';
-  heart.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-  heart.style.left = Math.random() * 100 + 'vw';
-  heart.style.fontSize = (0.8 + Math.random() * 1.5) + 'rem';
-  const duration = 8 + Math.random() * 12;
-  heart.style.animationDuration = duration + 's';
-  heart.style.animationDelay = delay + 'ms';
-  container.appendChild(heart);
-  setTimeout(() => heart.remove(), (duration + delay / 1000 + 1) * 1000);
-}
-
-// ==========================================
-// Sparkles on cursor
-// ==========================================
-function initSparkles() {
-  let lastX = 0, lastY = 0;
-  const sparkContainer = document.getElementById('sparkles');
-
-  document.addEventListener('mousemove', (e) => {
-    const dist = Math.hypot(e.clientX - lastX, e.clientY - lastY);
-    if (dist > 40) {
-      createSparkle(e.clientX, e.clientY, sparkContainer);
-      lastX = e.clientX;
-      lastY = e.clientY;
-    }
-  });
-}
-
-function createSparkle(x, y, container) {
-  const colors = ['#ff6eb4', '#a78bfa', '#ffd54f', '#ff4d6d', '#c9b8ff'];
-  for (let i = 0; i < 3; i++) {
-    const s = document.createElement('div');
-    s.className = 'sparkle';
-    s.style.left = (x + (Math.random() - 0.5) * 20) + 'px';
-    s.style.top = (y + (Math.random() - 0.5) * 20) + 'px';
-    s.style.background = colors[Math.floor(Math.random() * colors.length)];
-    s.style.width = s.style.height = (4 + Math.random() * 5) + 'px';
-    container.appendChild(s);
-    setTimeout(() => s.remove(), 600);
-  }
-}
-
-// ==========================================
-// Progress Dots
-// ==========================================
-function initProgressDots() {
-  const container = document.createElement('div');
-  container.className = 'progress-dots';
-  for (let i = 1; i <= 6; i++) {
-    const dot = document.createElement('div');
-    dot.className = 'progress-dot' + (i === 1 ? ' active' : '');
-    dot.id = `dot${i}`;
-    container.appendChild(dot);
-  }
-  document.body.appendChild(container);
-}
-
-function updateProgressDots(screen) {
-  for (let i = 1; i <= 6; i++) {
-    const dot = document.getElementById(`dot${i}`);
-    if (dot) dot.classList.toggle('active', i === screen);
-  }
-}
-
-// ==========================================
-// Screen Transitions
-// ==========================================
-function goToScreen(num) {
-  const current = document.getElementById(`screen${currentScreen}`);
-  const next = document.getElementById(`screen${num}`);
-
-  if (!next) return;
-
-  current.classList.add('exit');
-  setTimeout(() => {
-    current.classList.remove('active', 'exit');
-  }, 400);
-
-  setTimeout(() => {
-    next.classList.add('active');
-    currentScreen = num;
-    updateProgressDots(Math.min(num, 6));
-    onScreenEnter(num);
-  }, 350);
-}
-
-function onScreenEnter(num) {
-  if (num === 4) initTimelineAnimation();
-  if (num === 6) startConfession();
-  if (num === 7) startCelebration();
-  if (num === 8) startRain();
-}
-
-// ==========================================
-// Envelope Click - Screen 1
-// ==========================================
-function initEnvelope() {
-  const env = document.getElementById('envelope');
-  env.addEventListener('click', () => {
-    env.style.transform = 'scale(1.2) rotate(10deg)';
-    env.style.transition = 'transform 0.3s ease';
+function launchConfetti(count = 120) {
+  for (let i = 0; i < count; i++) {
     setTimeout(() => {
-      showParticles(env, ['💌', '💕', '✨', '🌸']);
-      goToScreen(2);
-    }, 300);
+      const el = document.createElement("div");
+      el.className = "confetti-piece";
+      const color = CONFETTI_COLORS[Math.floor(rand(0, CONFETTI_COLORS.length))];
+      const w = rand(6, 14); const h = rand(8, 18);
+      el.style.cssText = `
+        left: ${rand(0,100)}%;
+        width: ${w}px; height: ${h}px;
+        background: ${color};
+        transform: rotate(${rand(0,360)}deg);
+        animation-duration: ${rand(2.5,5)}s;
+        animation-delay: ${rand(0,0.5)}s;
+        border-radius: ${rand(0,50)}%;
+      `;
+      confettiEl.appendChild(el);
+      el.addEventListener("animationend", () => el.remove());
+    }, i * 18);
+  }
+}
+
+/* ─────────────────────────────────────────────────────
+   HEART CANVAS (step 3 bg)
+   ───────────────────────────────────────────────────── */
+
+function initHeartCanvas() {
+  const canvas = document.getElementById("heartCanvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+
+  function resize() {
+    canvas.width  = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+  }
+  resize();
+  window.addEventListener("resize", resize);
+
+  const particles = [];
+  for (let i = 0; i < 50; i++) {
+    particles.push({
+      t: rand(0, Math.PI * 2),
+      speed: rand(0.005, 0.018),
+      size: rand(4, 14),
+      alpha: rand(0.05, 0.25),
+      color: CONFETTI_COLORS[Math.floor(rand(0, CONFETTI_COLORS.length))],
+      drift: rand(-0.5, 0.5),
+      driftSpeed: rand(0.002, 0.008),
+    });
+  }
+
+  function heartX(t) { return 16 * Math.pow(Math.sin(t), 3); }
+  function heartY(t) { return -(13*Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t)); }
+
+  function draw() {
+    if (!canvas.isConnected) { cancelAnimationFrame(heartAnimFrame); return; }
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const cx = canvas.width / 2, cy = canvas.height / 2;
+    const scale = Math.min(canvas.width, canvas.height) / 36;
+
+    particles.forEach(p => {
+      p.t += p.speed;
+      p.drift += p.driftSpeed;
+      const x = cx + heartX(p.t) * scale + Math.sin(p.drift) * 8;
+      const y = cy + heartY(p.t) * scale + Math.cos(p.drift) * 6;
+      ctx.globalAlpha = p.alpha;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(x, y, p.size / 2, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    heartAnimFrame = requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+/* ─────────────────────────────────────────────────────
+   TYPEWRITER
+   ───────────────────────────────────────────────────── */
+
+function typewriter(el, text, speed = 60, cb) {
+  el.textContent = "";
+  let i = 0;
+  function tick() {
+    if (i < text.length) {
+      el.textContent += text[i++];
+      setTimeout(tick, speed);
+    } else if (cb) { cb(); }
+  }
+  tick();
+}
+
+/* ─────────────────────────────────────────────────────
+   PROGRESS DOTS
+   ───────────────────────────────────────────────────── */
+
+function updateDots(step) {
+  progressDots.forEach((dot, i) => {
+    dot.classList.toggle("active", i === step);
   });
 }
 
-// ==========================================
-// Button Wiring
-// ==========================================
-function initButtons() {
-  document.getElementById('btn2to3').addEventListener('click', () => {
-    goToScreen(3);
-    showToast('มาดูเหตุผลกันเลย! 💕');
-  });
-  document.getElementById('btn3to4').addEventListener('click', () => {
-    goToScreen(4);
-  });
-  document.getElementById('btn4to5').addEventListener('click', () => {
-    goToScreen(5);
-    showToast('มาเล่นเกมกันก่อน! 🎮');
-  });
-  document.getElementById('btn5to6').addEventListener('click', () => {
-    goToScreen(6);
-  });
+/* ─────────────────────────────────────────────────────
+   STEP TRANSITIONS
+   ───────────────────────────────────────────────────── */
+
+function showCard(incoming) {
+  const all = [cardIntro, cardStory, cardFeelings, cardQuestion, cardYes];
+  const outgoing = all.find(c => !c.classList.contains("hidden"));
+
+  if (outgoing) {
+    outgoing.style.animation = "none";
+    outgoing.style.transition = "opacity 0.3s, transform 0.3s";
+    outgoing.style.opacity = "0";
+    outgoing.style.transform = "scale(0.92) translateY(-20px)";
+    setTimeout(() => {
+      outgoing.classList.add("hidden");
+      outgoing.style.cssText = "";
+    }, 320);
+  }
+
+  setTimeout(() => {
+    incoming.classList.remove("hidden");
+    incoming.style.animation = "cardIn 0.7s cubic-bezier(0.34,1.56,0.64,1) both";
+  }, outgoing ? 300 : 0);
 }
 
-// ==========================================
-// Reason Cards - Screen 3
-// ==========================================
-function initReasonCards() {
-  const cards = document.querySelectorAll('.reason-card');
-  let openCard = null;
-  let openedCount = 0;
+/* ─────────────────────────────────────────────────────
+   STEP 0 → 1  (Intro → Story)
+   ───────────────────────────────────────────────────── */
 
-  cards.forEach((card, i) => {
-    // Build desc overlay
-    const desc = document.createElement('div');
-    desc.className = 'reason-desc';
-    desc.textContent = card.dataset.desc;
-    card.appendChild(desc);
+btnStart.addEventListener("click", () => {
+  spawnSparkles(
+    btnStart.getBoundingClientRect().left + btnStart.offsetWidth / 2,
+    btnStart.getBoundingClientRect().top,
+    10
+  );
+  currentStep = 1;
+  updateDots(1);
+  showCard(cardStory);
+  buildStoryLines();
+  startFloatingHearts(1100);
+});
 
-    card.addEventListener('click', () => {
-      if (openCard && openCard !== card) {
-        openCard.classList.remove('open');
-      }
-      card.classList.toggle('open');
-      openCard = card.classList.contains('open') ? card : null;
+function buildStoryLines() {
+  const container = document.getElementById("storyLines");
+  container.innerHTML = "";
+  STORY_LINES.forEach((line, i) => {
+    const el = document.createElement("div");
+    el.className = "story-line";
+    el.textContent = line;
+    el.style.animationDelay = `${0.2 + i * 0.22}s`;
+    container.appendChild(el);
+  });
+  // Show next button after last line
+  const delay = 0.2 + STORY_LINES.length * 0.22 + 0.4;
+  setTimeout(() => {
+    btnNext1.style.opacity = "0";
+    btnNext1.style.transform = "translateY(14px)";
+    btnNext1.style.transition = "opacity 0.5s, transform 0.5s";
+    setTimeout(() => {
+      btnNext1.style.opacity = "1";
+      btnNext1.style.transform = "translateY(0)";
+    }, 60);
+  }, delay * 1000);
+}
 
-      if (card.classList.contains('open')) {
-        openedCount++;
-        showParticles(card, ['💕', '✨', '💖']);
-        if (openedCount <= 3) {
-          showToast(TOAST_MESSAGES_SCREEN3[openedCount - 1]);
-        }
-        if (openedCount === cards.length) {
-          showToast('เปิดครบทุกอันแล้ว! 🎉', 2500);
-        }
+/* ─────────────────────────────────────────────────────
+   STEP 1 → 2  (Story → Feelings)
+   ───────────────────────────────────────────────────── */
+
+btnNext1.addEventListener("click", () => {
+  currentStep = 2;
+  updateDots(2);
+  showCard(cardFeelings);
+  buildFeelingChips();
+  const feelTitle = document.getElementById("feelTitle");
+  setTimeout(() => typewriter(feelTitle, "รู้สึกยังไงกับแก... 🌸", 55), 400);
+});
+
+function buildFeelingChips() {
+  const grid = document.getElementById("feelingGrid");
+  grid.innerHTML = "";
+  feelingsSelected = 0;
+  FEELINGS.forEach((f, i) => {
+    const el = document.createElement("div");
+    el.className = "feel-chip";
+    el.textContent = f;
+    el.style.animationDelay = `${0.1 + i * 0.08}s`;
+    el.addEventListener("click", () => {
+      el.classList.toggle("active");
+      feelingsSelected += el.classList.contains("active") ? 1 : -1;
+      spawnSparkles(
+        el.getBoundingClientRect().left + el.offsetWidth / 2,
+        el.getBoundingClientRect().top + el.offsetHeight / 2,
+        5
+      );
+      if (feelingsSelected >= 3) {
+        btnNext2.classList.remove("hidden");
+        btnNext2.style.animation = "cardIn 0.5s cubic-bezier(0.34,1.56,0.64,1)";
+      } else {
+        btnNext2.classList.add("hidden");
       }
     });
+    grid.appendChild(el);
   });
 }
 
-// ==========================================
-// Timeline Animation - Screen 4
-// ==========================================
-function initTimelineAnimation() {
-  const items = document.querySelectorAll('.timeline-item');
-  items.forEach((item, i) => {
+/* ─────────────────────────────────────────────────────
+   STEP 2 → 3  (Feelings → Question)
+   ───────────────────────────────────────────────────── */
+
+btnNext2.addEventListener("click", () => {
+  currentStep = 3;
+  updateDots(3);
+  showCard(cardQuestion);
+  setTimeout(() => {
+    initHeartCanvas();
+    const q = document.getElementById("bigQuestion");
+    typewriter(q, "ລອງຄົບກັນເບິ່ງບໍ່ ຮິຮິ 💌", 65);
+  }, 500);
+  startFloatingHearts(700);
+  setupNoButton();
+});
+
+/* ─────────────────────────────────────────────────────
+   NO BUTTON — shrinks and escapes
+   ───────────────────────────────────────────────────── */
+
+function setupNoButton() {
+  noClickCount = 0;
+  noButtonActive = true;
+  resetNoButton();
+}
+
+function resetNoButton() {
+  btnNo.style.cssText = "";
+  btnNo.style.position = "relative";
+  btnNo.style.transition = "transform 0.15s, opacity 0.4s";
+  btnNo.textContent = "ยังก่อน... 😅";
+  btnNo.style.opacity = "1";
+  btnNo.style.pointerEvents = "auto";
+  btnNo.style.fontSize = "";
+  btnNo.style.padding = "";
+}
+
+// Escalating "escape" behaviour for the No button
+btnNo.addEventListener("mouseenter", handleNoHover);
+btnNo.addEventListener("touchstart", handleNoHover, { passive: true });
+
+function handleNoHover() {
+  if (!noButtonActive) return;
+  escapeNoButton();
+}
+
+btnNo.addEventListener("click", () => {
+  if (!noButtonActive) return;
+  noClickCount++;
+  escapeNoButton();
+  showNoReaction(noClickCount);
+});
+
+function escapeNoButton() {
+  noClickCount++;
+  const maxEscapes = 8;
+
+  // Shrink factor
+  const shrink = Math.max(0.28, 1 - noClickCount * 0.1);
+  const opacity = Math.max(0.1, 1 - noClickCount * 0.11);
+
+  // Move to random position within viewport
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const rect = btnNo.getBoundingClientRect();
+
+  // Random target within safe zone
+  const tx = rand(30, vw - 30);
+  const ty = rand(30, vh - 30);
+
+  btnNo.style.position = "fixed";
+  btnNo.style.zIndex   = "9999";
+  btnNo.style.left     = tx + "px";
+  btnNo.style.top      = ty + "px";
+  btnNo.style.transform = `scale(${shrink})`;
+  btnNo.style.transition = `left ${0.25 + noClickCount * 0.03}s cubic-bezier(0.68,-0.55,0.27,1.55), top ${0.25 + noClickCount * 0.03}s cubic-bezier(0.68,-0.55,0.27,1.55), transform 0.2s, opacity 0.4s, font-size 0.3s`;
+  btnNo.style.opacity  = opacity;
+  btnNo.style.fontSize = `${Math.max(0.5, 0.95 - noClickCount * 0.07)}rem`;
+  btnNo.style.padding  = `${Math.max(4, 10 - noClickCount * 0.8)}px ${Math.max(8, 24 - noClickCount * 2)}px`;
+
+  // Funny text changes
+  const noTexts = [
+    "ยังก่อน... 😅",
+    "อย่าเพิ่ง! 🫣",
+    "รอแป๊บ 🙈",
+    "ขอคิดก่อนน 🤔",
+    "อย่ากดเลย 😤",
+    "หนีแล้วนะ! 🏃",
+    "จับฉันไม่ได้ 🙊",
+    "หมดแล้ว~ ✨",
+  ];
+  const idx = Math.min(noClickCount - 1, noTexts.length - 1);
+  btnNo.textContent = noTexts[idx];
+
+  // After max escapes: vanish the No button
+  if (noClickCount >= maxEscapes) {
     setTimeout(() => {
-      item.classList.add('visible');
-    }, parseInt(item.dataset.delay) || i * 200);
-  });
-}
-
-// ==========================================
-// Mini Game - Screen 5
-// ==========================================
-function initGame() {
-  document.getElementById('startGame').addEventListener('click', startGame);
-}
-
-function startGame() {
-  if (gameRunning) return;
-  gameRunning = true;
-  gameScore = 0;
-  gameTimer = 20;
-  gameOver = false;
-
-  document.getElementById('gameOverlay').style.display = 'none';
-  document.getElementById('scoreCount').textContent = '0';
-  document.getElementById('timerCount').textContent = '20';
-  document.getElementById('gameHearts').innerHTML = '';
-
-  // Timer countdown
-  gameInterval = setInterval(() => {
-    gameTimer--;
-    document.getElementById('timerCount').textContent = gameTimer;
-    if (gameTimer <= 5) {
-      document.getElementById('timerCount').style.color = '#ff4d6d';
-    }
-    if (gameTimer <= 0) {
-      endGame(false);
-    }
-  }, 1000);
-
-  // Spawn hearts
-  spawnGameHeart();
-  gameHeartInterval = setInterval(() => {
-    if (!gameOver) spawnGameHeart();
-    if (!gameOver) spawnGameHeart();
-  }, 800);
-}
-
-function spawnGameHeart() {
-  const area = document.getElementById('gameHearts');
-  const hearts = ['❤️', '💕', '💖', '💗', '💓', '💝', '🌸', '⭐'];
-  const heart = document.createElement('div');
-  heart.className = 'game-heart';
-  heart.textContent = hearts[Math.floor(Math.random() * hearts.length)];
-
-  const x = 5 + Math.random() * 85;
-  heart.style.left = x + '%';
-
-  const fallDuration = 2.5 + Math.random() * 3;
-  heart.style.animationDuration = fallDuration + 's';
-
-  heart.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (gameOver) return;
-    heart.style.animation = 'none';
-    heart.style.transform = 'scale(2)';
-    heart.style.opacity = '0';
-    heart.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
-    showParticles(heart, ['💕', '✨']);
-
-    gameScore++;
-    document.getElementById('scoreCount').textContent = gameScore;
-
-    if (gameScore >= 10) {
-      endGame(true);
-    }
-    setTimeout(() => heart.remove(), 250);
-  });
-
-  // Miss handler
-  heart.addEventListener('animationend', () => {
-    if (!gameOver && heart.parentNode) {
-      heart.remove();
-      // flash miss
-      const flash = document.createElement('div');
-      flash.className = 'game-miss-flash';
-      document.getElementById('gameArea').appendChild(flash);
-      setTimeout(() => flash.remove(), 300);
-    }
-  });
-
-  area.appendChild(heart);
-  setTimeout(() => {
-    if (heart.parentNode) heart.remove();
-  }, (fallDuration + 0.5) * 1000);
-}
-
-function endGame(won) {
-  gameOver = true;
-  gameRunning = false;
-  clearInterval(gameInterval);
-  clearInterval(gameHeartInterval);
-
-  setTimeout(() => {
-    if (won) {
-      showToast('เก่งมากเลย! 🎉 ผ่านแล้ว!', 2500);
-      const btn = document.getElementById('btn5to6');
-      btn.classList.remove('hidden');
-      btn.style.animation = 'superBounce 0.6s cubic-bezier(0.34,1.56,0.64,1) both';
-      launchConfetti();
-    } else {
-      showToast(`ได้ ${gameScore}/10 💕 ลองใหม่ได้นะ!`, 2500);
-      // Reset game
+      btnNo.style.opacity = "0";
+      btnNo.style.transform = `scale(0)`;
       setTimeout(() => {
-        gameOver = false;
-        gameScore = 0;
-        gameTimer = 20;
-        document.getElementById('gameOverlay').style.display = 'flex';
-        document.getElementById('gameHearts').innerHTML = '';
-        document.getElementById('timerCount').style.color = '';
-        document.getElementById('scoreCount').textContent = '0';
-        document.getElementById('timerCount').textContent = '20';
-      }, 2000);
-    }
-  }, 300);
+        btnNo.style.display = "none";
+        noButtonActive = false;
+      }, 400);
+    }, 300);
+  }
 }
 
-// ==========================================
-// Confession - Screen 6
-// ==========================================
-function startConfession() {
-  confessionStep = 0;
-  const wordsContainer = document.getElementById('confessionWords');
-  wordsContainer.innerHTML = '';
+function showNoReaction(count) {
+  const reactions = [
+    "แกจะกดอีกเหรอ?! 🥲",
+    "หนีเก่งมากเลย 😮",
+    "แต่ฉันยังรอนะ 💗",
+    "ได้เลยๆ ค่อยๆ คิด 🌸",
+    "ฮ่าๆ แกซน 😄",
+    "กดปุ่มนึงก็ได้นะ 🥺",
+    "หาปุ่มใช่อยู่ตรงนั้น 👆",
+  ];
+  const msg = reactions[Math.min(count - 1, reactions.length - 1)];
+  const toast = document.createElement("div");
+  toast.textContent = msg;
+  toast.style.cssText = `
+    position:fixed; bottom:80px; left:50%; transform:translateX(-50%);
+    background:rgba(255,107,157,0.9); color:#fff;
+    padding:10px 22px; border-radius:100px;
+    font-family:'Mitr',sans-serif; font-size:0.95rem;
+    z-index:10000; pointer-events:none;
+    animation: toastIn 0.4s ease both, toastOut 0.4s ease 2s both;
+  `;
+  document.body.appendChild(toast);
 
-  // Animate in big heart
-  const bigHeart = document.getElementById('bigHeart');
-  bigHeart.style.animation = 'none';
-  setTimeout(() => {
-    bigHeart.style.animation = 'heartbeat 1.2s ease-in-out infinite';
-  }, 50);
-
-  // Type out confession words
-  const title = document.querySelector('.confession-title');
-  title.style.opacity = '0';
-  title.style.transform = 'translateY(20px)';
-  setTimeout(() => {
-    title.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-    title.style.opacity = '1';
-    title.style.transform = 'translateY(0)';
-  }, 300);
-
-  CONFESSION_PHRASES.forEach((phrase, i) => {
-    setTimeout(() => {
-      const word = document.createElement('span');
-      word.className = `confession-word ${phrase.class}`;
-      word.textContent = phrase.text;
-      word.style.animationDelay = '0s';
-      wordsContainer.appendChild(word);
-
-      if (i === CONFESSION_PHRASES.length - 1) {
-        setTimeout(() => {
-          document.getElementById('questionBox').classList.remove('hidden');
-          document.getElementById('questionBox').style.animation = 'superBounce 0.6s cubic-bezier(0.34,1.56,0.64,1) both';
-        }, 800);
-      }
-    }, 600 + i * 500);
-  });
+  // Inline keyframes via style tag
+  if (!document.getElementById("toast-kf")) {
+    const s = document.createElement("style");
+    s.id = "toast-kf";
+    s.textContent = `
+      @keyframes toastIn  { from{opacity:0;transform:translateX(-50%) translateY(14px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+      @keyframes toastOut { from{opacity:1} to{opacity:0;transform:translateX(-50%) translateY(-10px)} }
+    `;
+    document.head.appendChild(s);
+  }
+  setTimeout(() => toast.remove(), 2500);
 }
 
-// ==========================================
-// YES / NO Handlers
-// ==========================================
-function handleYes() {
-  const btn = document.getElementById('btnYes');
-  btn.textContent = '💖💖💖';
-  btn.style.transform = 'scale(1.3)';
-  launchConfetti();
-  showParticlesAtCenter(['🎉', '💕', '✨', '💖', '🌸', '⭐']);
-  showToast('ขอบคุณนะ! 💕💕💕', 1500);
+/* ─────────────────────────────────────────────────────
+   YES BUTTON
+   ───────────────────────────────────────────────────── */
+
+btnYes.addEventListener("click", () => {
+  spawnSparkles(
+    btnYes.getBoundingClientRect().left + btnYes.offsetWidth / 2,
+    btnYes.getBoundingClientRect().top,
+    16
+  );
+  currentStep = 4;
+  updateDots(4);
+  if (heartAnimFrame) cancelAnimationFrame(heartAnimFrame);
+  showCard(cardYes);
+  launchConfetti(160);
+  startFloatingHearts(400);
+  showYesCard();
+});
+
+function showYesCard() {
+  const title = document.getElementById("yesTitle");
+  setTimeout(() => typewriter(title, "ยินดีด้วยนะ 🎉💕", 70), 500);
   setTimeout(() => {
-    goToScreen(7);
+    launchConfetti(80);
+    spawnMegaSparkles();
   }, 1200);
 }
 
-function handleNo(btn) {
-  noCount++;
-  document.getElementById('noCount').textContent = noCount;
-  document.getElementById('noCounter').classList.remove('hidden');
-
-  const noMessages = NO_MESSAGES;
-  const msg = noMessages[Math.min(noCount - 1, noMessages.length - 1)];
-  showToast(msg, 1800);
-
-  // Move the button
-  moveNoButton(btn);
-
-  // Make it smaller each press
-  const scale = Math.max(0.5, 1 - noCount * 0.06);
-  btn.style.transform = `scale(${scale})`;
-
-  if (noCount >= 10) {
-    btn.style.display = 'none';
-    showToast('ปุ่มหนีไปแล้ว! 😂 กด ได้เลย สิ~', 3000);
-  }
-}
-
-function moveNoButton(btn) {
-  const questionBox = document.getElementById('questionBox');
-  const rect = questionBox.getBoundingClientRect();
-
-  const maxX = rect.width - 140;
-  const maxY = rect.height - 60;
-
-  const randomX = Math.random() * maxX - maxX / 2;
-  const randomY = Math.random() * maxY - maxY / 2;
-
-  btn.style.position = 'relative';
-  btn.style.left = randomX + 'px';
-  btn.style.top = randomY + 'px';
-  btn.style.transition = 'left 0.2s ease, top 0.2s ease, transform 0.2s ease';
-}
-
-function goBackToQuestion() {
-  goToScreen(6);
-  noCount = 0;
-  const noBtn = document.getElementById('btnNo');
-  if (noBtn) {
-    noBtn.style.display = '';
-    noBtn.style.position = '';
-    noBtn.style.left = '';
-    noBtn.style.top = '';
-    noBtn.style.transform = '';
-  }
-  document.getElementById('noCounter').classList.add('hidden');
-  startConfession();
-}
-
-// ==========================================
-// Celebration - Screen 7
-// ==========================================
-function startCelebration() {
-  launchConfetti();
-  launchFireworks();
-
-  const finalHearts = document.getElementById('finalHearts');
-  finalHearts.innerHTML = '';
-  ['💕', '💖', '💗', '💓', '💝'].forEach((h, i) => {
-    const span = document.createElement('span');
-    span.className = 'final-heart-item';
-    span.textContent = h;
-    span.style.animationDelay = `${i * 0.15}s`;
-    finalHearts.appendChild(span);
-  });
-
-  showToast('ยินดีด้วยนะ!! 🎉🎉', 2000);
-  setTimeout(() => showToast('เราเป็นแฟนกันแล้ว! 💕', 2000), 2200);
-}
-
-function launchFireworks() {
-  const container = document.getElementById('fireworks');
-  const emojis = ['🎉', '🎊', '✨', '⭐', '💥', '🌟'];
-
-  let count = 0;
-  const interval = setInterval(() => {
-    for (let i = 0; i < 5; i++) {
-      const fw = document.createElement('div');
-      fw.className = 'firework';
-      fw.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-      fw.style.left = Math.random() * 100 + '%';
-      fw.style.top = Math.random() * 60 + '%';
-      fw.style.fontSize = (1 + Math.random() * 2) + 'rem';
-      fw.style.animationDelay = Math.random() * 0.5 + 's';
-      container.appendChild(fw);
-      setTimeout(() => fw.remove(), 1500);
-    }
-    count++;
-    if (count >= 10) clearInterval(interval);
-  }, 400);
-}
-
-// ==========================================
-// Sad Rain - Screen 8
-// ==========================================
-function startRain() {
-  const container = document.getElementById('rainContainer');
-  container.innerHTML = '';
-
-  for (let i = 0; i < 40; i++) {
-    const drop = document.createElement('div');
-    drop.className = 'raindrop';
-    drop.style.left = Math.random() * 100 + '%';
-    drop.style.height = (10 + Math.random() * 20) + 'px';
-    drop.style.opacity = 0.3 + Math.random() * 0.5;
-    const duration = 0.8 + Math.random() * 1.2;
-    drop.style.animationDuration = duration + 's';
-    drop.style.animationDelay = Math.random() * 2 + 's';
-    container.appendChild(drop);
-  }
-
-  // Animate crying emoji
-  const emoji = document.getElementById('cryingEmoji');
-  const cryEmojis = ['😢', '😭', '🥲', '😔', '💔'];
-  let cryIdx = 0;
-  const cryInterval = setInterval(() => {
-    cryIdx = (cryIdx + 1) % cryEmojis.length;
-    emoji.textContent = cryEmojis[cryIdx];
-  }, 1200);
-
-  // Clear when leaving screen
-  const observer = new MutationObserver(() => {
-    if (!document.getElementById('screen8').classList.contains('active')) {
-      clearInterval(cryInterval);
-      observer.disconnect();
-    }
-  });
-  observer.observe(document.getElementById('screen8'), { attributes: true });
-}
-
-// ==========================================
-// Particles & Confetti Effects
-// ==========================================
-function initClickParticles() {
-  document.addEventListener('click', (e) => {
-    if (e.target.closest('.btn-next') ||
-        e.target.closest('.btn-yes') ||
-        e.target.closest('.reason-card') ||
-        e.target.closest('#envelope')) return;
-
-    const emojis = ['💕', '✨', '⭐', '🌸'];
-    for (let i = 0; i < 3; i++) {
-      const p = document.createElement('div');
-      p.className = 'particle';
-      p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-      p.style.left = e.clientX + 'px';
-      p.style.top = e.clientY + 'px';
-      const angle = Math.random() * Math.PI * 2;
-      const dist = 40 + Math.random() * 60;
-      p.style.setProperty('--tx', Math.cos(angle) * dist + 'px');
-      p.style.setProperty('--ty', Math.sin(angle) * dist + 'px');
-      document.body.appendChild(p);
-      setTimeout(() => p.remove(), 800);
-    }
-  });
-}
-
-function showParticles(element, emojis) {
-  const rect = element.getBoundingClientRect();
-  const cx = rect.left + rect.width / 2;
-  const cy = rect.top + rect.height / 2;
-
-  for (let i = 0; i < 6; i++) {
-    const p = document.createElement('div');
-    p.className = 'particle';
-    p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-    p.style.left = cx + 'px';
-    p.style.top = cy + 'px';
-    const angle = (i / 6) * Math.PI * 2;
-    const dist = 50 + Math.random() * 50;
-    p.style.setProperty('--tx', Math.cos(angle) * dist + 'px');
-    p.style.setProperty('--ty', Math.sin(angle) * dist + 'px');
-    document.body.appendChild(p);
-    setTimeout(() => p.remove(), 800);
-  }
-}
-
-function showParticlesAtCenter(emojis) {
-  const cx = window.innerWidth / 2;
-  const cy = window.innerHeight / 2;
-
-  for (let i = 0; i < 16; i++) {
-    const p = document.createElement('div');
-    p.className = 'particle';
-    p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-    p.style.left = (cx + (Math.random() - 0.5) * 200) + 'px';
-    p.style.top = (cy + (Math.random() - 0.5) * 200) + 'px';
-    const angle = Math.random() * Math.PI * 2;
-    const dist = 80 + Math.random() * 120;
-    p.style.setProperty('--tx', Math.cos(angle) * dist + 'px');
-    p.style.setProperty('--ty', Math.sin(angle) * dist + 'px');
-    p.style.fontSize = (1 + Math.random()) + 'rem';
-    document.body.appendChild(p);
-    setTimeout(() => p.remove(), 900);
-  }
-}
-
-function launchConfetti() {
-  const colors = ['#ff6eb4', '#a78bfa', '#ffd54f', '#ff4d6d', '#c9b8ff', '#ffb3d1', '#7c3aed'];
-  const shapes = ['circle', 'rect'];
-
-  for (let i = 0; i < 80; i++) {
+function spawnMegaSparkles() {
+  for (let i = 0; i < 20; i++) {
     setTimeout(() => {
-      const c = document.createElement('div');
-      c.className = 'confetti-piece';
-      const color = colors[Math.floor(Math.random() * colors.length)];
-      c.style.background = color;
-      c.style.left = Math.random() * 100 + 'vw';
-      c.style.top = -10 + 'px';
-      const size = 6 + Math.random() * 10;
-      c.style.width = size + 'px';
-      c.style.height = size + 'px';
-      if (shapes[Math.floor(Math.random() * 2)] === 'circle') {
-        c.style.borderRadius = '50%';
+      spawnSparkles(
+        rand(80, window.innerWidth - 80),
+        rand(80, window.innerHeight - 80),
+        6
+      );
+    }, i * 120);
+  }
+}
+
+/* ─────────────────────────────────────────────────────
+   RESTART
+   ───────────────────────────────────────────────────── */
+
+btnRestart.addEventListener("click", () => {
+  stopFloatingHearts();
+  currentStep = 0;
+  updateDots(0);
+  noClickCount = 0;
+  noButtonActive = true;
+
+  // Reset No button position
+  btnNo.style.cssText = "";
+  btnNo.style.display = "";
+  btnNo.textContent = "ยังก่อน... 😅";
+
+  // Remove all wobble hearts & float hearts
+  document.querySelectorAll(".float-heart, .wobble-heart").forEach(e => e.remove());
+
+  showCard(cardIntro);
+  createWobbleHearts();
+  startFloatingHearts(1200);
+});
+
+/* ─────────────────────────────────────────────────────
+   CLICK RIPPLE on body
+   ───────────────────────────────────────────────────── */
+
+document.addEventListener("click", (e) => {
+  const ripple = document.createElement("div");
+  ripple.style.cssText = `
+    position:fixed; left:${e.clientX}px; top:${e.clientY}px;
+    width:20px; height:20px; border-radius:50%;
+    border:2px solid rgba(255,107,157,0.6);
+    transform:translate(-50%,-50%) scale(0);
+    pointer-events:none; z-index:9998;
+    animation: rippleOut 0.6s ease forwards;
+  `;
+  document.body.appendChild(ripple);
+  if (!document.getElementById("ripple-kf")) {
+    const s = document.createElement("style");
+    s.id = "ripple-kf";
+    s.textContent = `
+      @keyframes rippleOut {
+        to { transform:translate(-50%,-50%) scale(5); opacity:0; }
       }
-      const duration = 2 + Math.random() * 3;
-      c.style.animationDuration = duration + 's';
-      c.style.animationDelay = Math.random() * 0.5 + 's';
-      document.body.appendChild(c);
-      setTimeout(() => c.remove(), (duration + 1) * 1000);
-    }, i * 30);
+    `;
+    document.head.appendChild(s);
   }
-}
-
-// ==========================================
-// Toast System
-// ==========================================
-function showToast(message, duration = 2000) {
-  const container = document.getElementById('toastContainer');
-  const toast = document.createElement('div');
-  toast.className = 'toast';
-  toast.textContent = message;
-  container.appendChild(toast);
-
-  setTimeout(() => {
-    toast.classList.add('out');
-    setTimeout(() => toast.remove(), 400);
-  }, duration);
-}
-
-// ==========================================
-// Share feature
-// ==========================================
-function shareConfession() {
-  if (navigator.share) {
-    navigator.share({
-      title: '💕 ข่าวดีมาแล้ว!',
-      text: 'เราเป็นแฟนกันแล้ว! 🎉💕',
-      url: window.location.href,
-    }).catch(() => {});
-  } else {
-    // Fallback: copy to clipboard
-    navigator.clipboard.writeText('เราเป็นแฟนกันแล้ว! 💕 ' + window.location.href)
-      .then(() => showToast('คัดลอกลิงก์แล้ว! 📋', 2000))
-      .catch(() => showToast('ส่งความสุขให้คนอื่นด้วยนะ! 💕', 2000));
-  }
-  showParticlesAtCenter(['🎉', '💕', '✨', '💖', '🌸']);
-}
-
-// ==========================================
-// Keyboard Shortcuts (Easter Egg)
-// ==========================================
-let keySequence = '';
-document.addEventListener('keydown', (e) => {
-  keySequence += e.key;
-  if (keySequence.includes('love')) {
-    keySequence = '';
-    showToast('Secret: ฉันรักเธอนะ! 💕💕💕', 3000);
-    launchConfetti();
-    showParticlesAtCenter(['💕', '💖', '💗', '💓', '💝']);
-  }
-  if (keySequence.length > 20) keySequence = keySequence.slice(-10);
+  setTimeout(() => ripple.remove(), 700);
 });
 
-// ==========================================
-// Prevent Right-click for fun
-// ==========================================
-document.addEventListener('contextmenu', (e) => {
-  e.preventDefault();
-  showToast('ห้ามขวา click! กด Yes สิ 😄', 1500);
+/* ─────────────────────────────────────────────────────
+   CURSOR TRAIL
+   ───────────────────────────────────────────────────── */
+
+let lastTrailTime = 0;
+document.addEventListener("mousemove", (e) => {
+  const now = Date.now();
+  if (now - lastTrailTime < 60) return;
+  lastTrailTime = now;
+
+  const trail = document.createElement("div");
+  trail.textContent = HEART_EMOJIS[Math.floor(rand(0, HEART_EMOJIS.length))];
+  trail.style.cssText = `
+    position:fixed; left:${e.clientX}px; top:${e.clientY}px;
+    font-size:${rand(10,22)}px; pointer-events:none;
+    z-index:9990; transform:translate(-50%,-50%);
+    animation:trailFade 0.9s ease forwards;
+  `;
+  document.body.appendChild(trail);
+  if (!document.getElementById("trail-kf")) {
+    const s = document.createElement("style");
+    s.id = "trail-kf";
+    s.textContent = `
+      @keyframes trailFade {
+        0%   { opacity:0.9; transform:translate(-50%,-50%) scale(1) rotate(0); }
+        100% { opacity:0; transform:translate(-50%,-100%) scale(0.3) rotate(${rand(-30,30)}deg); }
+      }
+    `;
+    document.head.appendChild(s);
+  }
+  setTimeout(() => trail.remove(), 1000);
 });
 
-// ==========================================
-// Window visibility / tab attention
-// ==========================================
-let tabTitle = document.title;
-let tabBlink = null;
+/* ─────────────────────────────────────────────────────
+   SHAKE ANIMATION for card on YES click
+   ───────────────────────────────────────────────────── */
 
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) {
-    let blink = true;
-    tabBlink = setInterval(() => {
-      document.title = blink ? '💕 กลับมาดูนะ!' : tabTitle;
-      blink = !blink;
-    }, 1000);
-  } else {
-    clearInterval(tabBlink);
-    document.title = tabTitle;
+btnYes.addEventListener("click", () => {
+  if (!document.getElementById("shake-kf")) {
+    const s = document.createElement("style");
+    s.id = "shake-kf";
+    s.textContent = `
+      @keyframes cardShake {
+        0%,100% { transform: translateX(0) rotate(0); }
+        15%  { transform: translateX(-8px) rotate(-2deg); }
+        30%  { transform: translateX(8px) rotate(2deg); }
+        45%  { transform: translateX(-5px) rotate(-1deg); }
+        60%  { transform: translateX(5px) rotate(1deg); }
+        75%  { transform: translateX(-3px); }
+        90%  { transform: translateX(3px); }
+      }
+    `;
+    document.head.appendChild(s);
+  }
+  scene.style.animation = "cardShake 0.6s ease";
+  scene.addEventListener("animationend", () => { scene.style.animation = ""; }, { once: true });
+});
+
+/* ─────────────────────────────────────────────────────
+   KEYBOARD SHORTCUT (Enter = Yes when on question step)
+   ───────────────────────────────────────────────────── */
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && currentStep === 3) {
+    btnYes.click();
+  }
+  if ((e.key === "Escape" || e.key === "ArrowRight") && currentStep < 3) {
+    const nextBtns = [btnStart, btnNext1, btnNext2];
+    const nb = nextBtns[currentStep];
+    if (nb && !nb.classList.contains("hidden")) nb.click();
   }
 });
 
-// ==========================================
-// Mobile touch: swipe not needed, tap works
-// ==========================================
-document.addEventListener('touchstart', () => {}, { passive: true });
+/* ─────────────────────────────────────────────────────
+   RANDOM HEART BURSTS (idle on question step)
+   ───────────────────────────────────────────────────── */
 
-// ==========================================
-// Screensaver: if idle for 10s, animate bg
-// ==========================================
-let idleTimer = null;
-let idleBgInterval = null;
-
-function resetIdle() {
-  clearTimeout(idleTimer);
-  clearInterval(idleBgInterval);
-  document.body.style.backgroundSize = '';
-  idleTimer = setTimeout(startIdleAnimation, 10000);
+function startIdleHeartBursts() {
+  setInterval(() => {
+    if (currentStep !== 3) return;
+    const rect = cardQuestion.getBoundingClientRect();
+    spawnSparkles(
+      rect.left + rand(20, rect.width - 20),
+      rect.top  + rand(20, rect.height - 20),
+      4
+    );
+  }, 2200);
 }
 
-function startIdleAnimation() {
-  let hue = 0;
-  idleBgInterval = setInterval(() => {
+/* ─────────────────────────────────────────────────────
+   TOUCH EVENTS — prevent zoom on double tap
+   ───────────────────────────────────────────────────── */
+
+document.addEventListener("touchend", (e) => {
+  if (e.touches.length === 0) {
+    const touch = e.changedTouches[0];
+    spawnSparkles(touch.clientX, touch.clientY, 4);
+  }
+}, { passive: true });
+
+/* ─────────────────────────────────────────────────────
+   PERIODIC CONFETTI SHOWERS
+   ───────────────────────────────────────────────────── */
+
+function startPeriodicConfetti() {
+  setInterval(() => {
+    if (currentStep === 4) {
+      launchConfetti(40);
+    }
+  }, 5000);
+}
+
+/* ─────────────────────────────────────────────────────
+   UTILITY
+   ───────────────────────────────────────────────────── */
+
+function rand(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
+/* ─────────────────────────────────────────────────────
+   PULSING RIPPLES on card borders
+   ───────────────────────────────────────────────────── */
+
+function animateBorderGlow() {
+  const cards = [cardIntro, cardStory, cardFeelings, cardQuestion, cardYes];
+  let hue = 320;
+  setInterval(() => {
     hue = (hue + 1) % 360;
-    document.body.style.filter = `hue-rotate(${hue * 0.5}deg)`;
-  }, 50);
+    cards.forEach(c => {
+      if (!c.classList.contains("hidden")) {
+        c.style.borderColor = `hsla(${hue}, 80%, 80%, 0.5)`;
+        c.style.boxShadow = `0 20px 60px hsla(${hue}, 70%, 60%, 0.22), 0 4px 16px hsla(${hue}, 70%, 70%, 0.18)`;
+      }
+    });
+  }, 40);
 }
 
-['mousemove', 'keydown', 'click', 'touchstart'].forEach(ev => {
-  document.addEventListener(ev, () => {
-    document.body.style.filter = '';
-    resetIdle();
-  });
-});
-resetIdle();
+/* ─────────────────────────────────────────────────────
+   WOBBLE HEARTS (on yes card)
+   ───────────────────────────────────────────────────── */
 
-console.log('%c💕 สวัสดีนะ! ', 'font-size:24px; color:#ff6eb4; font-weight:bold;');
-console.log('%c ถ้าอยากรู้ว่าฉันชอบเธอมากแค่ไหน... กด Yes สิ! 💖', 'font-size:14px; color:#a78bfa;');
+function startYesAmbience() {
+  // extra sparkle explosions on yes
+  for (let i = 0; i < 8; i++) {
+    setTimeout(() => {
+      spawnSparkles(
+        rand(window.innerWidth * 0.1, window.innerWidth * 0.9),
+        rand(window.innerHeight * 0.1, window.innerHeight * 0.9),
+        8
+      );
+    }, i * 400 + 300);
+  }
+}
+
+btnYes.addEventListener("click", startYesAmbience);
+
+/* ─────────────────────────────────────────────────────
+   INIT — runs on page load
+   ───────────────────────────────────────────────────── */
+
+(function init() {
+  createBgParticles();
+  createFireflies();
+  createWobbleHearts();
+  startFloatingHearts(1200);
+  startIdleHeartBursts();
+  startPeriodicConfetti();
+  animateBorderGlow();
+  updateDots(0);
+})();
