@@ -417,7 +417,7 @@ btnNext2.addEventListener("click", () => {
   setTimeout(() => {
     initHeartCanvas();
     const q = document.getElementById("bigQuestion");
-    typewriter(q, "จะเป็นแฟนกันได้มั้ย? 💌", 65);
+    typewriter(q, "ລອງຄົບກັນເບິ່ງບໍ່ ຮິຮິ 💌", 65);
   }, 500);
   startFloatingHearts(700);
   setupNoButton();
